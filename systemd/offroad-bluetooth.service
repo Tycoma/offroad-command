@@ -1,0 +1,12 @@
+[Unit]
+Description=Off-Road Command Bluetooth Phone Reconnect
+After=pipewire.service pipewire-pulse.service wireplumber.service
+Wants=pipewire.service wireplumber.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/passenger-display/scripts/bluetooth-reconnect.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target
