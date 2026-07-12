@@ -149,9 +149,15 @@ ApplicationWindow {
                 successColor: root.successColor
             }
 
-            PlaceholderPage {
-                pageTitle: "RADIO"
-                description: "VHF radio and intercom module"
+            RadioPage {
+                panelColor: root.panelColor
+                borderColor: root.borderColor
+                accentColor: root.accentColor
+                textColor: root.textColor
+                secondaryTextColor: root.secondaryTextColor
+                warningColor: root.warningColor
+                dangerColor: root.dangerColor
+                successColor: root.successColor
             }
 
             PlaceholderPage {
@@ -205,7 +211,7 @@ ApplicationWindow {
                 }
 
                 NavButton {
-                    text: "RADIO"
+                    text: "MEDIA"
                     selected: root.currentPage === 2
 
                     onClicked: root.changePage(2)

@@ -6,6 +6,7 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWebEngineQuick import QtWebEngineQuick
 
+from backend.media_backend import MediaBackend
 from backend.navigation_backend import NavigationBackend
 
 
@@ -18,10 +19,16 @@ def main() -> int:
     engine = QQmlApplicationEngine()
 
     navigation_backend = NavigationBackend()
+    media_backend = MediaBackend()
 
     engine.rootContext().setContextProperty(
         "navigationBackend",
         navigation_backend,
+    )
+
+    engine.rootContext().setContextProperty(
+        "mediaBackend",
+        media_backend,
     )
 
     qml_file = Path(__file__).resolve().parent / "main.qml"
