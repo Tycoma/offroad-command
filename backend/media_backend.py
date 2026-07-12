@@ -11,11 +11,17 @@ class MediaBackend(QObject):
     mediaChanged = Signal()
     volumeChanged = Signal()
     errorChanged = Signal()
+    previousPhoneChanged = Signal()
+    connectionMessageChanged = Signal()
+
+    # Previously paired phone
+    PREVIOUS_PHONE_MAC = "C4:F7:C1:BA:87:63"
 
     def __init__(self) -> None:
         super().__init__()
 
         self._player_path = ""
+
         self._title = "No media playing"
         self._artist = "Connect phone and start Spotify"
         self._album = ""
@@ -24,17 +30,25 @@ class MediaBackend(QObject):
         self._volume = 70
         self._error = ""
 
+        self._previous_phone_name = "Previous phone"
+        self._previous_phone_mac = self.PREVIOUS_PHONE_MAC
+        self._previous_phone_connected = False
+        self._previous_phone_paired = False
+        self._previous_phone_trusted = False
+        self._connection_message = ""
+
         self._timer = QTimer(self)
         self._timer.setInterval(1000)
         self._timer.timeout.connect(self.refresh)
         self._timer.start()
 
+        self.refreshPreviousPhone()
         self.refresh()
 
     @staticmethod
     def _run(
         command: list[str],
-        timeout: float = 4.0,
+        timeout: float = 6.0,
     ) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             command,
@@ -43,6 +57,190 @@ class MediaBackend(QObject):
             timeout=timeout,
             check=False,
         )
+
+    def _set_error(self, message: str) -> None:
+        if message != self._error:
+            self._error = message
+            self.errorChanged.emit()
+
+    def _set_connection_message(self, message: str) -> None:
+        if message != self._connection_message:
+            self._connection_message = message
+            self.connectionMessageChanged.emit()
+
+    @staticmethod
+    def _bluetooth_value(
+        output: str,
+        field: str,
+    ) -> str:
+        pattern = rf"^\s*{re.escape(field)}:\s*(.+?)\s*$"
+        match = re.search(
+            pattern,
+            output,
+            flags=re.MULTILINE,
+        )
+
+        return match.group(1).strip() if match else ""
+
+    @Slot()
+    def refreshPreviousPhone(self) -> None:
+        try:
+            result = self._run(
+                [
+                    "bluetoothctl",
+                    "info",
+                    self._previous_phone_mac,
+                ]
+            )
+
+            output = result.stdout
+
+            name = (
+                self._bluetooth_value(output, "Alias")
+                or self._bluetooth_value(output, "Name")
+                or "Previous phone"
+            )
+
+            connected = (
+                self._bluetooth_value(output, "Connected").lower()
+                == "yes"
+            )
+
+            paired = (
+                self._bluetooth_value(output, "Paired").lower()
+                == "yes"
+            )
+
+            trusted = (
+                self._bluetooth_value(output, "Trusted").lower()
+                == "yes"
+            )
+
+            changed = (
+                name != self._previous_phone_name
+                or connected != self._previous_phone_connected
+                or paired != self._previous_phone_paired
+                or trusted != self._previous_phone_trusted
+            )
+
+            self._previous_phone_name = name
+            self._previous_phone_connected = connected
+            self._previous_phone_paired = paired
+            self._previous_phone_trusted = trusted
+
+            if changed:
+                self.previousPhoneChanged.emit()
+
+        except (
+            FileNotFoundError,
+            subprocess.SubprocessError,
+        ) as error:
+            self._set_error(str(error))
+
+    @Slot()
+    def connectPreviousPhone(self) -> None:
+        self._set_connection_message(
+            f"Connecting to {self._previous_phone_name}..."
+        )
+
+        try:
+            self._run(
+                [
+                    "bluetoothctl",
+                    "power",
+                    "on",
+                ]
+            )
+
+            self._run(
+                [
+                    "bluetoothctl",
+                    "trust",
+                    self._previous_phone_mac,
+                ]
+            )
+
+            result = self._run(
+                [
+                    "bluetoothctl",
+                    "connect",
+                    self._previous_phone_mac,
+                ],
+                timeout=15.0,
+            )
+
+            QTimer.singleShot(
+                1200,
+                self._finishPreviousPhoneConnection,
+            )
+
+            if result.returncode != 0:
+                error_text = (
+                    result.stderr.strip()
+                    or result.stdout.strip()
+                    or "Bluetooth connection failed."
+                )
+
+                self._set_connection_message(error_text)
+
+        except (
+            FileNotFoundError,
+            subprocess.SubprocessError,
+        ) as error:
+            self._set_connection_message(str(error))
+
+    @Slot()
+    def _finishPreviousPhoneConnection(self) -> None:
+        self.refreshPreviousPhone()
+        self.refresh()
+
+        if self._previous_phone_connected:
+            self._set_connection_message(
+                f"{self._previous_phone_name} connected."
+            )
+        else:
+            self._set_connection_message(
+                "Phone was not available. Make sure Bluetooth is enabled "
+                "and the phone is near the display."
+            )
+
+    @Slot()
+    def disconnectPreviousPhone(self) -> None:
+        try:
+            result = self._run(
+                [
+                    "bluetoothctl",
+                    "disconnect",
+                    self._previous_phone_mac,
+                ]
+            )
+
+            if result.returncode == 0:
+                self._set_connection_message(
+                    f"{self._previous_phone_name} disconnected."
+                )
+            else:
+                self._set_connection_message(
+                    result.stderr.strip()
+                    or result.stdout.strip()
+                    or "Disconnect failed."
+                )
+
+            QTimer.singleShot(
+                700,
+                self._finishPreviousPhoneDisconnect,
+            )
+
+        except (
+            FileNotFoundError,
+            subprocess.SubprocessError,
+        ) as error:
+            self._set_connection_message(str(error))
+
+    @Slot()
+    def _finishPreviousPhoneDisconnect(self) -> None:
+        self.refreshPreviousPhone()
+        self.refresh()
 
     def _find_bluez_player(self) -> Optional[str]:
         result = self._run(
@@ -64,36 +262,6 @@ class MediaBackend(QObject):
                 return path
 
         return None
-
-    def _call_player(self, method: str) -> bool:
-        if not self._player_path:
-            self.refresh()
-
-        if not self._player_path:
-            self._set_error("No Bluetooth media player found.")
-            return False
-
-        result = self._run(
-            [
-                "busctl",
-                "call",
-                "org.bluez",
-                self._player_path,
-                "org.bluez.MediaPlayer1",
-                method,
-            ]
-        )
-
-        if result.returncode != 0:
-            self._set_error(
-                result.stderr.strip()
-                or f"{method} command failed."
-            )
-            return False
-
-        self._set_error("")
-        QTimer.singleShot(300, self.refresh)
-        return True
 
     def _get_property(self, property_name: str) -> str:
         if not self._player_path:
@@ -142,11 +310,6 @@ class MediaBackend(QObject):
 
         return ""
 
-    def _set_error(self, message: str) -> None:
-        if message != self._error:
-            self._error = message
-            self.errorChanged.emit()
-
     def _update_media(
         self,
         player_path: str,
@@ -174,6 +337,36 @@ class MediaBackend(QObject):
 
         if changed:
             self.mediaChanged.emit()
+
+    def _call_player(self, method: str) -> bool:
+        if not self._player_path:
+            self.refresh()
+
+        if not self._player_path:
+            self._set_error("No Bluetooth media player found.")
+            return False
+
+        result = self._run(
+            [
+                "busctl",
+                "call",
+                "org.bluez",
+                self._player_path,
+                "org.bluez.MediaPlayer1",
+                method,
+            ]
+        )
+
+        if result.returncode != 0:
+            self._set_error(
+                result.stderr.strip()
+                or f"{method} command failed."
+            )
+            return False
+
+        self._set_error("")
+        QTimer.singleShot(300, self.refresh)
+        return True
 
     def _refresh_volume(self) -> None:
         result = self._run(
@@ -204,6 +397,8 @@ class MediaBackend(QObject):
 
     @Slot()
     def refresh(self) -> None:
+        self.refreshPreviousPhone()
+
         try:
             player_path = self._find_bluez_player()
 
@@ -211,11 +406,16 @@ class MediaBackend(QObject):
                 self._update_media(
                     "",
                     "No media playing",
-                    "Connect phone and start Spotify",
+                    (
+                        self._previous_phone_name
+                        if self._previous_phone_connected
+                        else "Connect phone and start Spotify"
+                    ),
                     "",
                     "Stopped",
-                    False,
+                    self._previous_phone_connected,
                 )
+
                 self._refresh_volume()
                 return
 
@@ -248,7 +448,7 @@ class MediaBackend(QObject):
                 title = "Bluetooth Audio"
 
             if not artist:
-                artist = "Connected phone"
+                artist = self._previous_phone_name
 
             self._update_media(
                 player_path,
@@ -335,3 +535,27 @@ class MediaBackend(QObject):
     @Property(str, notify=errorChanged)
     def error(self) -> str:
         return self._error
+
+    @Property(str, notify=previousPhoneChanged)
+    def previousPhoneName(self) -> str:
+        return self._previous_phone_name
+
+    @Property(str, notify=previousPhoneChanged)
+    def previousPhoneMac(self) -> str:
+        return self._previous_phone_mac
+
+    @Property(bool, notify=previousPhoneChanged)
+    def previousPhoneConnected(self) -> bool:
+        return self._previous_phone_connected
+
+    @Property(bool, notify=previousPhoneChanged)
+    def previousPhonePaired(self) -> bool:
+        return self._previous_phone_paired
+
+    @Property(bool, notify=previousPhoneChanged)
+    def previousPhoneTrusted(self) -> bool:
+        return self._previous_phone_trusted
+
+    @Property(str, notify=connectionMessageChanged)
+    def connectionMessage(self) -> str:
+        return self._connection_message
