@@ -16,7 +16,9 @@ Item {
     property color dangerColor: "#ff5d5d"
     property color successColor: "#55d889"
 
+    // Supplied by main.qml.
     property int currentChannel: 4
+
     property string channelName: "CHASE"
     property string frequency: "151.6250"
     property int volume: 65
@@ -24,6 +26,20 @@ Item {
     property bool scanning: false
     property bool transmitting: false
     property bool receiving: false
+
+    signal channelSelected(int channel)
+
+    function selectPreviousChannel() {
+        if (page.currentChannel > 1) {
+            page.currentChannel--
+            page.channelSelected(page.currentChannel)
+        }
+    }
+
+    function selectNextChannel() {
+        page.currentChannel++
+        page.channelSelected(page.currentChannel)
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -153,10 +169,7 @@ Item {
 
                             text: "CHANNEL -"
 
-                            onClicked: {
-                                if (page.currentChannel > 1)
-                                    page.currentChannel--
-                            }
+                            onClicked: page.selectPreviousChannel()
                         }
 
                         Button {
@@ -165,9 +178,7 @@ Item {
 
                             text: "CHANNEL +"
 
-                            onClicked: {
-                                page.currentChannel++
-                            }
+                            onClicked: page.selectNextChannel()
                         }
                     }
                 }

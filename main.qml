@@ -172,6 +172,12 @@ ApplicationWindow {
                     warningColor: root.warningColor
                     dangerColor: root.dangerColor
                     successColor: root.successColor
+
+                    currentChannel: root.radioChannel
+
+                    onChannelSelected: function(channel) {
+                        root.radioChannel = channel
+                    }
                 }
 
                 PlaceholderPage {
@@ -189,21 +195,57 @@ ApplicationWindow {
                     description: "Lights, compressor and PDM controls"
                 }
 
-                PlaceholderPage {
-                    pageTitle: "SETTINGS"
-                    description: "Display and connection settings"
+                SettingsPage {
+                    panelColor: root.panelColor
+                    borderColor: root.borderColor
+                    accentColor: root.accentColor
+                    textColor: root.textColor
+                    secondaryTextColor: root.secondaryTextColor
+                    warningColor: root.warningColor
+                    dangerColor: root.dangerColor
+                    successColor: root.successColor
+
+                    bluetoothConnected: mediaBackend.connected
+                    gpsSatellites: root.gpsSatellites
+                    canConnected: false
+
+                    coolantWarning: root.maxCoolantTemp
+                    oilPressureWarning: root.minOilPressure
+                    batteryWarning: root.minBatteryVoltage
+                    rpmWarning: root.maxEngineRpm
+
+                    onCoolantWarningChangedByUser: function(value) {
+                        root.maxCoolantTemp = value
+                    }
+
+                    onOilPressureWarningChangedByUser: function(value) {
+                        root.minOilPressure = value
+                    }
+
+                    onBatteryWarningChangedByUser: function(value) {
+                        root.minBatteryVoltage = value
+                    }
+
+                    onRpmWarningChangedByUser: function(value) {
+                        root.maxEngineRpm = value
+                    }
+
+                    onExitRequested: {
+                        root.close()
+                    }
                 }
             }
 
             GhostSpeed {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
-                anchors.bottomMargin: 18
+                anchors.bottomMargin: 24
 
                 visible: root.currentPage === 0
 
                 speed: root.gpsSpeed
                 textColor: "white"
+                accentColor: root.accentColor
             }
 
             GhostCompass {

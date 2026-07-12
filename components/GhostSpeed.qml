@@ -1,20 +1,26 @@
 import QtQuick
 import QtQuick.Controls
 
-Item {
+Rectangle {
     id: speedDisplay
 
     property int speed: 0
     property color textColor: "white"
+    property color accentColor: "#2da8ff"
 
-    width: 180
-    height: 110
+    width: 190
+    height: 118
+    radius: 18
 
-    opacity: 0.42
+    color: "#b30b1016"
+    opacity: 0.92
+
+    border.width: 2
+    border.color: "#99ffffff"
 
     Column {
         anchors.centerIn: parent
-        spacing: -6
+        spacing: -4
 
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
@@ -22,7 +28,7 @@ Item {
             text: speedDisplay.speed
             color: speedDisplay.textColor
 
-            font.pixelSize: 76
+            font.pixelSize: 72
             font.bold: true
         }
 
@@ -30,9 +36,9 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
 
             text: "MPH"
-            color: speedDisplay.textColor
+            color: speedDisplay.accentColor
 
-            font.pixelSize: 19
+            font.pixelSize: 20
             font.bold: true
         }
     }

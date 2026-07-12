@@ -8,15 +8,15 @@ Rectangle {
     property color accentColor: "#2da8ff"
     property color textColor: "white"
 
-    width: 132
-    height: 132
-    radius: 66
+    width: 150
+    height: 150
+    radius: 75
 
-    opacity: 0.46
-    color: "#80101820"
+    opacity: 0.94
+    color: "#b30b1016"
 
     border.width: 2
-    border.color: textColor
+    border.color: "#99ffffff"
 
     function headingName(value) {
         if (value >= 337.5 || value < 22.5)
@@ -43,11 +43,23 @@ Rectangle {
         return "NW"
     }
 
+    Label {
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.topMargin: 9
+
+        text: "N"
+        color: compass.accentColor
+
+        font.pixelSize: 18
+        font.bold: true
+    }
+
     Item {
         anchors.centerIn: parent
 
-        width: 90
-        height: 90
+        width: 96
+        height: 96
 
         rotation: compass.heading
 
@@ -55,40 +67,39 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
 
-            width: 4
-            height: 42
-            radius: 2
+            width: 7
+            height: 44
+            radius: 3
 
             color: compass.accentColor
+        }
+
+        Rectangle {
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+
+            width: 5
+            height: 28
+            radius: 2
+
+            color: "#88ffffff"
         }
     }
 
     Rectangle {
         anchors.centerIn: parent
 
-        width: 12
-        height: 12
-        radius: 6
+        width: 14
+        height: 14
+        radius: 7
 
         color: compass.textColor
-    }
-
-    Label {
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.top: parent.top
-        anchors.topMargin: 8
-
-        text: "N"
-        color: compass.textColor
-
-        font.pixelSize: 16
-        font.bold: true
     }
 
     Label {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 14
+        anchors.bottomMargin: 18
 
         text: compass.headingName(compass.heading)
               + "  "
@@ -97,7 +108,7 @@ Rectangle {
 
         color: compass.textColor
 
-        font.pixelSize: 13
+        font.pixelSize: 14
         font.bold: true
     }
 }
