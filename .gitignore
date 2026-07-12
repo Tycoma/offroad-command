@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Python virtual environment
+.venv/
+venv/
+env/
+
+# QML and application caches
+.qmlcache/
+cache/
+*.qmlc
+*.jsc
+
+# Runtime logs and error captures
+logs/
+*.log
+*-error.txt
+ui-error.txt
+modular-error.txt
+qml-error.txt
+
+# Navigation databases and personal data
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Offline map packages
+maps/
+*.mbtiles
+*.pmtiles
+
+# Imported and exported user navigation files
+import/
+export/
+*.gpx
+*.kml
+*.kmz
+
+# Media and album-art cache
+media-cache/
+album-art/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backup copies created during development
+*.backup
+*.before-modular
+*-working-backup.qml

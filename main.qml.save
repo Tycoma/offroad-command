@@ -1,0 +1,1151 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+ApplicationWindow {
+    id: root
+
+    visible: true
+    visibility: Window.FullScreen
+    width: 1280
+    height: 800
+    minimumWidth: 800
+    minimumHeight: 480
+
+    title: "Off-Road Command"
+
+    color: "#090d12"
+
+    property int currentPage: 0
+    property string connectionStatus: "SIMULATION MODE"
+    property string gpsStatus: "GPS OFFLINE"
+    property string canStatus: "CAN OFFLINE"
+
+    readonly property color backgroundColor: "#090d12"
+    readonly property color panelColor: "#141b23"
+    readonly property color panelLightColor: "#1b2530"
+    readonly property color borderColor: "#2a3947"
+    readonly property color accentColor: "#2da8ff"
+    readonly property color textColor: "#f4f7fa"
+    readonly property color secondaryTextColor: "#8fa1b2"
+    readonly property color warningColor: "#ffb347"
+    readonly property color dangerColor: "#ff5d5d"
+    readonly property color successColor: "#55d889"
+
+    font.family: "DejaVu Sans"
+
+    function changePage(pageNumber) {
+        currentPage = pageNumber
+        pageStack.currentIndex = pageNumber
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        onActivated: root.close()
+    }
+
+    Shortcut {
+        sequence: "F11"
+
+        onActivated: {
+            if (root.visibility === Window.FullScreen)
+                root.visibility = Window.Windowed
+            else
+                root.visibility = Window.FullScreen
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        color: root.backgroundColor
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: 0
+
+        Rectangle {
+            id: topBar
+
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.max(58, root.height * 0.075)
+
+            color: "#0c1117"
+
+            border.width: 1
+            border.color: root.borderColor
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 20
+                anchors.rightMargin: 20
+
+                spacing: 18
+
+                ColumnLayout {
+                    spacing: 0
+
+                    Label {
+                        text: "OFF-ROAD COMMAND"
+
+                        color: root.textColor
+
+                        font.pixelSize: Math.max(18, root.height * 0.029)
+                        font.bold: true
+                    }
+
+                    Label {
+                        text: pageStack.currentItem
+                              ? pageStack.currentItem.pageTitle
+                              : "HOME"
+
+                        color: root.accentColor
+
+                        font.pixelSize: Math.max(11, root.height * 0.017)
+                        font.bold: true
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                StatusPill {
+                    text: root.gpsStatus
+                    statusColor: root.warningColor
+                }
+
+                StatusPill {
+                    text: root.canStatus
+                    statusColor: root.warningColor
+                }
+
+                ColumnLayout {
+                    spacing: 0
+
+                    Label {
+                        id: clockLabel
+
+                        Layout.alignment: Qt.AlignRight
+
+                        text: Qt.formatTime(new Date(), "hh:mm AP")
+                        color: root.textColor
+
+                        font.pixelSize: Math.max(16, root.height * 0.025)
+                        font.bold: true
+                    }
+
+                    Label {
+                        id: dateLabel
+
+                        Layout.alignment: Qt.AlignRight
+
+                        text: Qt.formatDate(new Date(), "MMM d, yyyy")
+                        color: root.secondaryTextColor
+
+                        font.pixelSize: Math.max(10, root.height * 0.015)
+                    }
+                }
+            }
+
+            Timer {
+                interval: 1000
+                running: true
+                repeat: true
+
+                onTriggered: {
+                    clockLabel.text = Qt.formatTime(new Date(), "hh:mm AP")
+                    dateLabel.text = Qt.formatDate(new Date(), "MMM d, yyyy")
+                }
+            }
+        }
+
+        StackLayout {
+            id: pageStack
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            currentIndex: root.currentPage
+
+            HomePage {
+                onOpenPage: function(pageNumber) {
+                    root.changePage(pageNumber)
+                }
+            }
+
+            MapsPage {
+            }
+
+            RadioPage {
+            }
+
+            EnginePage {
+            }
+
+            CamerasPage {
+            }
+
+            VehiclePage {
+            }
+
+            SettingsPage {
+            }
+        }
+
+        Rectangle {
+            id: bottomBar
+
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.max(68, root.height * 0.09)
+
+            color: "#0c1117"
+
+            border.width: 1
+            border.color: root.borderColor
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 8
+
+                spacing: 8
+
+                NavButton {
+                    text: "HOME"
+                    selected: root.currentPage === 0
+
+                    onClicked: root.changePage(0)
+                }
+
+                NavButton {
+                    text: "MAPS"
+                    selected: root.currentPage === 1
+
+                    onClicked: root.changePage(1)
+                }
+
+                NavButton {
+                    text: "RADIO"
+                    selected: root.currentPage === 2
+
+                    onClicked: root.changePage(2)
+                }
+
+                NavButton {
+                    text: "ENGINE"
+                    selected: root.currentPage === 3
+
+                    onClicked: root.changePage(3)
+                }
+
+                NavButton {
+                    text: "CAMERAS"
+                    selected: root.currentPage === 4
+
+                    onClicked: root.changePage(4)
+                }
+
+                NavButton {
+                    text: "VEHICLE"
+                    selected: root.currentPage === 5
+
+                    onClicked: root.changePage(5)
+                }
+
+                NavButton {
+                    text: "SETTINGS"
+                    selected: root.currentPage === 6
+
+                    onClicked: root.changePage(6)
+                }
+            }
+        }
+    }
+
+    component StatusPill: Rectangle {
+        property alias text: statusText.text
+        property color statusColor: root.warningColor
+
+        Layout.preferredWidth: statusText.implicitWidth + 32
+        Layout.preferredHeight: 34
+
+        radius: 17
+        color: root.panelColor
+
+        border.width: 1
+        border.color: statusColor
+
+        Row {
+            anchors.centerIn: parent
+            spacing: 8
+
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+
+                width: 9
+                height: 9
+                radius: 5
+
+                color: statusColor
+            }
+
+            Label {
+                id: statusText
+
+                anchors.verticalCenter: parent.verticalCenter
+
+                color: root.textColor
+
+                font.pixelSize: 11
+                font.bold: true
+            }
+        }
+    }
+
+    component NavButton: Button {
+        property bool selected: false
+
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+
+        background: Rectangle {
+            radius: 8
+
+            color: parent.selected
+                   ? root.accentColor
+                   : parent.down
+                     ? root.panelLightColor
+                     : root.panelColor
+
+            border.width: 1
+
+            border.color: parent.selected
+                          ? root.accentColor
+                          : root.borderColor
+        }
+
+        contentItem: Label {
+            text: parent.text
+
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+
+            color: parent.selected
+                   ? "#06101a"
+                   : root.textColor
+
+            font.pixelSize: Math.max(11, root.height * 0.017)
+            font.bold: true
+        }
+    }
+
+    component TileButton: Button {
+        property string tileTitle: ""
+        property string tileSubtitle: ""
+        property string tileSymbol: "•"
+
+        background: Rectangle {
+            radius: 14
+
+            color: parent.down
+                   ? root.panelLightColor
+                   : root.panelColor
+
+            border.width: parent.hovered ? 2 : 1
+
+            border.color: parent.hovered
+                          ? root.accentColor
+                          : root.borderColor
+        }
+
+        contentItem: ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+
+            spacing: 6
+
+            Label {
+                text: tileSymbol
+
+                color: root.accentColor
+
+                font.pixelSize: Math.max(26, root.height * 0.045)
+                font.bold: true
+            }
+
+            Item {
+                Layout.fillHeight: true
+            }
+
+            Label {
+                text: tileTitle
+
+                color: root.textColor
+
+                font.pixelSize: Math.max(17, root.height * 0.027)
+                font.bold: true
+            }
+
+            Label {
+                Layout.fillWidth: true
+
+                text: tileSubtitle
+                wrapMode: Text.WordWrap
+
+                color: root.secondaryTextColor
+
+                font.pixelSize: Math.max(11, root.height * 0.017)
+            }
+        }
+    }
+
+    component Panel: Rectangle {
+        radius: 14
+
+        color: root.panelColor
+
+        border.width: 1
+        border.color: root.borderColor
+    }
+
+    component PageHeading: ColumnLayout {
+        property string heading: ""
+        property string description: ""
+
+        spacing: 4
+
+        Label {
+            text: parent.heading
+
+            color: root.textColor
+
+            font.pixelSize: Math.max(25, root.height * 0.042)
+            font.bold: true
+        }
+
+        Label {
+            text: parent.description
+
+            color: root.secondaryTextColor
+
+            font.pixelSize: Math.max(12, root.height * 0.019)
+        }
+    }
+
+    component HomePage: Item {
+        id: homePage
+
+        property string pageTitle: "HOME"
+
+        signal openPage(int pageNumber)
+
+        GridLayout {
+            anchors.fill: parent
+            anchors.margins: Math.max(14, root.width * 0.018)
+
+            columns: 3
+            rows: 2
+
+            rowSpacing: 16
+            columnSpacing: 16
+
+            TileButton {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                tileTitle: "MAPS"
+                tileSubtitle: "Offline navigation, waypoints, routes and track recording"
+                tileSymbol: "⌖"
+
+                onClicked: homePage.openPage(1)
+            }
+
+            TileButton {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                tileTitle: "RADIO"
+                tileSubtitle: "VHF channel selection, volume, squelch and intercom"
+                tileSymbol: "◉"
+
+                onClicked: homePage.openPage(2)
+            }
+
+            TileButton {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                tileTitle: "ENGINE"
+                tileSubtitle: "MEFI-4 gauges, alerts, diagnostics and trip data"
+                tileSymbol: "⌁"
+
+                onClicked: homePage.openPage(3)
+            }
+
+            TileButton {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                tileTitle: "CAMERAS"
+                tileSubtitle: "Front, rear, suspension and auxiliary camera feeds"
+                tileSymbol: "▣"
+
+                onClicked: homePage.openPage(4)
+            }
+
+            TileButton {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                tileTitle: "VEHICLE"
+                tileSubtitle: "Lights, compressor, PDM outputs and accessories"
+                tileSymbol: "◆"
+
+                onClicked: homePage.openPage(5)
+            }
+
+            TileButton {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                tileTitle: "SETTINGS"
+                tileSubtitle: "Display, Bluetooth, CAN, GPS and system configuration"
+                tileSymbol: "⚙"
+
+                onClicked: homePage.openPage(6)
+            }
+        }
+    }
+
+    component MapsPage: Item {
+        property string pageTitle: "MAPS"
+
+        Rectangle {
+            anchors.fill: parent
+            color: "#101820"
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 18
+
+                radius: 16
+                color: "#18232d"
+
+                border.width: 1
+                border.color: root.borderColor
+
+                Repeater {
+                    model: 14
+
+                    Rectangle {
+                        required property int index
+
+                        x: (index * 173) % Math.max(1, parent.width)
+                        y: (index * 97) % Math.max(1, parent.height)
+
+                        width: 180
+                        height: 3
+
+                        rotation: (index * 31) % 180
+
+                        color: "#263746"
+                        opacity: 0.7
+                    }
+                }
+
+                Rectangle {
+                    anchors.centerIn: parent
+
+                    width: 28
+                    height: 28
+                    radius: 14
+
+                    color: root.accentColor
+
+                    border.width: 4
+                    border.color: "white"
+                }
+
+                Label {
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: 45
+
+                    text: "OFFLINE MAP AREA"
+
+                    color: root.secondaryTextColor
+
+                    font.pixelSize: 20
+                    font.bold: true
+                }
+
+                Row {
+                    anchors.left: parent.left
+                    anchors.bottom: parent.bottom
+                    anchors.margins: 16
+
+                    spacing: 10
+
+                    Button {
+                        text: "WAYPOINT"
+                    }
+
+                    Button {
+                        text: "RECORD TRACK"
+                    }
+
+                    Button {
+                        text: "ROUTES"
+                    }
+
+                    Button {
+                        text: "LAYERS"
+                    }
+                }
+
+                Column {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.rightMargin: 16
+
+                    spacing: 10
+
+                    Button {
+                        width: 60
+                        height: 60
+                        text: "+"
+                    }
+
+                    Button {
+                        width: 60
+                        height: 60
+                        text: "−"
+                    }
+
+                    Button {
+                        width: 60
+                        height: 60
+                        text: "⌖"
+                    }
+                }
+            }
+        }
+    }
+
+    component RadioPage: Item {
+        property string pageTitle: "RADIO"
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+
+            spacing: 16
+
+            Panel {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: 2
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 26
+
+                    PageHeading {
+                        heading: "VHF RADIO"
+                        description: "Channel and frequency control"
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignHCenter
+
+                        text: "151.6250"
+
+                        color: root.textColor
+
+                        font.pixelSize: Math.max(48, root.height * 0.09)
+                        font.bold: true
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignHCenter
+
+                        text: "CHANNEL 4  •  CHASE"
+
+                        color: root.accentColor
+
+                        font.pixelSize: 20
+                        font.bold: true
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Button {
+                            Layout.fillWidth: true
+                            text: "CHANNEL −"
+                        }
+
+                        Button {
+                            Layout.fillWidth: true
+                            text: "CHANNEL +"
+                        }
+                    }
+                }
+            }
+
+            Panel {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: 1
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 22
+
+                    Label {
+                        text: "RADIO CONTROLS"
+                        color: root.textColor
+                        font.pixelSize: 20
+                        font.bold: true
+                    }
+
+                    Label {
+                        text: "VOLUME"
+                        color: root.secondaryTextColor
+                    }
+
+                    Slider {
+                        Layout.fillWidth: true
+                        from: 0
+                        to: 100
+                        value: 65
+                    }
+
+                    Label {
+                        text: "SQUELCH"
+                        color: root.secondaryTextColor
+                    }
+
+                    Slider {
+                        Layout.fillWidth: true
+                        from: 0
+                        to: 10
+                        value: 4
+                    }
+
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        text: "PUSH TO TALK"
+                    }
+
+                    Button {
+                        Layout.fillWidth: true
+                        text: "SCAN"
+                    }
+                }
+            }
+        }
+    }
+
+    component EnginePage: Item {
+        property string pageTitle: "ENGINE"
+
+        GridLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+
+            columns: 3
+            rows: 2
+
+            rowSpacing: 14
+            columnSpacing: 14
+
+            GaugeCard {
+                label: "ENGINE SPEED"
+                value: "2450"
+                unit: "RPM"
+            }
+
+            GaugeCard {
+                label: "OIL PRESSURE"
+                value: "58"
+                unit: "PSI"
+            }
+
+            GaugeCard {
+                label: "COOLANT"
+                value: "188"
+                unit: "°F"
+            }
+
+            GaugeCard {
+                label: "BATTERY"
+                value: "14.2"
+                unit: "VOLTS"
+            }
+
+            GaugeCard {
+                label: "FUEL PRESSURE"
+                value: "59"
+                unit: "PSI"
+            }
+
+            GaugeCard {
+                label: "THROTTLE"
+                value: "21"
+                unit: "%"
+            }
+        }
+    }
+
+    component GaugeCard: Panel {
+        property string label: ""
+        property string value: ""
+        property string unit: ""
+
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+
+            Label {
+                text: parent.parent.label
+
+                color: root.secondaryTextColor
+
+                font.pixelSize: 14
+                font.bold: true
+            }
+
+            Item {
+                Layout.fillHeight: true
+            }
+
+            Label {
+                Layout.alignment: Qt.AlignHCenter
+
+                text: parent.parent.value
+
+                color: root.textColor
+
+                font.pixelSize: Math.max(42, root.height * 0.075)
+                font.bold: true
+            }
+
+            Label {
+                Layout.alignment: Qt.AlignHCenter
+
+                text: parent.parent.unit
+
+                color: root.accentColor
+
+                font.pixelSize: 16
+                font.bold: true
+            }
+
+            Item {
+                Layout.fillHeight: true
+            }
+        }
+    }
+
+    component CamerasPage: Item {
+        property string pageTitle: "CAMERAS"
+
+        GridLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+
+            columns: 2
+            rows: 2
+
+            rowSpacing: 14
+            columnSpacing: 14
+
+            CameraPanel {
+                cameraName: "FRONT CAMERA"
+            }
+
+            CameraPanel {
+                cameraName: "REAR CAMERA"
+            }
+
+            CameraPanel {
+                cameraName: "LEFT SUSPENSION"
+            }
+
+            CameraPanel {
+                cameraName: "RIGHT SUSPENSION"
+            }
+        }
+    }
+
+    component CameraPanel: Panel {
+        property string cameraName: ""
+
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+
+        color: "#111820"
+
+        Label {
+            anchors.centerIn: parent
+
+            text: parent.cameraName + "\nNO SIGNAL"
+
+            horizontalAlignment: Text.AlignHCenter
+
+            color: root.secondaryTextColor
+
+            font.pixelSize: 18
+            font.bold: true
+        }
+    }
+
+    component VehiclePage: Item {
+        property string pageTitle: "VEHICLE"
+
+        GridLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+
+            columns: 3
+            rows: 2
+
+            rowSpacing: 14
+            columnSpacing: 14
+
+            VehicleControl {
+                controlName: "ROOF LIGHTS"
+            }
+
+            VehicleControl {
+                controlName: "FRONT LIGHTS"
+            }
+
+            VehicleControl {
+                controlName: "REAR LIGHTS"
+            }
+
+            VehicleControl {
+                controlName: "WHIPS"
+            }
+
+            VehicleControl {
+                controlName: "AIR COMPRESSOR"
+            }
+
+            VehicleControl {
+                controlName: "FAN OVERRIDE"
+            }
+        }
+    }
+
+    component VehicleControl: Button {
+        property string controlName: ""
+        property bool active: false
+
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+
+        checkable: true
+
+        onToggled: active = checked
+
+        background: Rectangle {
+            radius: 14
+
+            color: parent.active
+                   ? "#174b36"
+                   : root.panelColor
+
+            border.width: 2
+
+            border.color: parent.active
+                          ? root.successColor
+                          : root.borderColor
+        }
+
+        contentItem: Column {
+            anchors.centerIn: parent
+            spacing: 12
+
+            Rectangle {
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                width: 24
+                height: 24
+                radius: 12
+
+                color: parent.parent.active
+                       ? root.successColor
+                       : root.secondaryTextColor
+            }
+
+            Label {
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                text: parent.parent.active
+                      ? parent.parent.controlName + "\nON"
+                      : parent.parent.controlName + "\nOFF"
+
+                horizontalAlignment: Text.AlignHCenter
+
+                color: root.textColor
+
+                font.pixelSize: 17
+                font.bold: true
+            }
+        }
+    }
+
+    component SettingsPage: Item {
+        property string pageTitle: "SETTINGS"
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 18
+
+            spacing: 16
+
+            Panel {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 22
+
+                    PageHeading {
+                        heading: "DISPLAY"
+                        description: "Brightness and interface settings"
+                    }
+
+                    Label {
+                        text: "BRIGHTNESS"
+                        color: root.secondaryTextColor
+                    }
+
+                    Slider {
+                        Layout.fillWidth: true
+
+                        from: 10
+                        to: 100
+                        value: 80
+                    }
+
+                    Switch {
+                        text: "Night mode"
+                        checked: true
+                    }
+
+                    Switch {
+                        text: "Automatic brightness"
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+                }
+            }
+
+            Panel {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 22
+
+                    PageHeading {
+                        heading: "CONNECTIONS"
+                        description: "GPS, CAN and Bluetooth status"
+                    }
+
+                    ConnectionRow {
+                        connectionName: "GPS"
+                        connectionState: "DISCONNECTED"
+                    }
+
+                    ConnectionRow {
+                        connectionName: "CAN BUS"
+                        connectionState: "DISCONNECTED"
+                    }
+
+                    ConnectionRow {
+                        connectionName: "BLUETOOTH"
+                        connectionState: "READY"
+                    }
+
+                    ConnectionRow {
+                        connectionName: "WI-FI"
+                        connectionState: "READY"
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    Button {
+                        Layout.fillWidth: true
+                        text: "EXIT APPLICATION"
+
+                        onClicked: root.close()
+                    }
+                }
+            }
+        }
+    }
+
+    component ConnectionRow: Rectangle {
+        property string connectionName: ""
+        property string connectionState: ""
+
+        Layout.fillWidth: true
+        Layout.preferredHeight: 52
+
+        radius: 8
+        color: root.panelLightColor
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 14
+            anchors.rightMargin: 14
+
+            Label {
+                text: parent.parent.connectionName
+
+                color: root.textColor
+
+                font.pixelSize: 14
+                font.bold: true
+            }
+
+            Item {
+                Layout.fillWidth: true
+            }
+
+            Label {
+                text: parent.parent.connectionState
+
+                color: parent.parent.connectionState === "READY"
+                       ? root.successColor
+                       : root.warningColor
+
+                font.pixelSize: 12
+                font.bold: true
+            }
+        }
+    }
+}

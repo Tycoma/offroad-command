@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width,
+                 initial-scale=1.0,
+                 maximum-scale=1.0,
+                 user-scalable=no"
+    >
+
+    <title>Off-Road Map</title>
+
+    <link rel="stylesheet" href="leaflet.css">
+
+    <style>
+        html,
+        body,
+        #map {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #101820;
+        }
+
+        .leaflet-control-zoom a {
+            width: 56px !important;
+            height: 56px !important;
+            line-height: 56px !important;
+            font-size: 30px !important;
+            color: white !important;
+            background: #141b23 !important;
+            border-color: #2a3947 !important;
+        }
+
+        .leaflet-control-attribution {
+            color: #c6d0da;
+            background: rgba(10, 15, 20, 0.78) !important;
+        }
+
+        .vehicle-marker {
+            width: 30px;
+            height: 30px;
+            background: #2da8ff;
+            border: 4px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 12px black;
+        }
+
+        .waypoint-marker {
+            width: 20px;
+            height: 20px;
+            background: #ffb347;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 8px black;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script src="leaflet.js"></script>
+
+    <script>
+        const startingPosition = [33.4484, -112.0740];
+
+        const map = L.map("map", {
+            zoomControl: false,
+            attributionControl: true,
+            preferCanvas: true,
+            doubleClickZoom: true,
+            touchZoom: true,
+            dragging: true
+        });
+
+        map.setView(startingPosition, 11);
+
+        const tiles = L.tileLayer(
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                minZoom: 2,
+                maxZoom: 19,
+                attribution:
+                    "&copy; OpenStreetMap contributors"
+            }
+        );
+
+        tiles.addTo(map);
+
+        const vehicleIcon = L.divIcon({
+            className: "",
+            html: '<div class="vehicle-marker"></div>',
+            iconSize: [38, 38],
+            iconAnchor: [19, 19]
+        });
+
+        const waypointIcon = L.divIcon({
+            className: "",
+            html: '<div class="waypoint-marker"></div>',
+            iconSize: [26, 26],
+            iconAnchor: [13, 13]
+        });
+
+        const vehicleMarker = L.marker(
+            startingPosition,
+            {
+                icon: vehicleIcon,
+                zIndexOffset: 1000
+            }
+        ).addTo(map);
+
+        const simulatedTrack = [
+            [33.4484, -112.0740]
+        ];
+
+        const trackLine = L.polyline(
+            simulatedTrack,
+            {
+                color: "#2da8ff",
+                weight: 6,
+                opacity: 0.85
+            }
+        ).addTo(map);
+
+        let latitude = startingPosition[0];
+        let longitude = startingPosition[1];
+        let simulationRunning = true;
+
+        function updateVehicle() {
+            if (!simulationRunning) {
+                return;
+            }
+
+            latitude += 0.00004;
+            longitude += 0.000025;
+
+            const position = [latitude, longitude];
+
+            vehicleMarker.setLatLng(position);
+            simulatedTrack.push(position);
+            trackLine.setLatLngs(simulatedTrack);
+        }
+
+        window.setInterval(updateVehicle, 750);
+
+        map.on("contextmenu", function(event) {
+            const marker = L.marker(
+                event.latlng,
+                {
+                    icon: waypointIcon
+                }
+            ).addTo(map);
+
+            marker.bindPopup(
+                "<strong>New Waypoint</strong><br>" +
+                event.latlng.lat.toFixed(5) +
+                ", " +
+                event.latlng.lng.toFixed(5)
+            );
+
+            marker.openPopup();
+        });
+
+        // Desktop testing: double-click creates a waypoint.
+        map.on("dblclick", function(event) {
+            const marker = L.marker(
+                event.latlng,
+                {
+                    icon: waypointIcon
+                }
+            ).addTo(map);
+
+            marker.bindPopup(
+                "<strong>New Waypoint</strong><br>" +
+                event.latlng.lat.toFixed(5) +
+                ", " +
+                event.latlng.lng.toFixed(5)
+            );
+
+            marker.openPopup();
+        });
+
+        function zoomIn() {
+            map.zoomIn();
+        }
+
+        function zoomOut() {
+            map.zoomOut();
+        }
+
+        function recenterVehicle() {
+            map.setView(
+                vehicleMarker.getLatLng(),
+                Math.max(map.getZoom(), 15)
+            );
+        }
+
+        function toggleSimulation() {
+            simulationRunning = !simulationRunning;
+            return simulationRunning;
+        }
+function getVehiclePositionJson() {
+    const position = vehicleMarker.getLatLng();
+
+    return JSON.stringify({
+        latitude: position.lat,
+        longitude: position.lng
+    });
+}
+
+function addWaypointMarker(
+    latitude,
+    longitude,
+    name,
+    category
+) {
+    const marker = L.marker(
+        [latitude, longitude],
+        {
+            icon: waypointIcon
+        }
+    ).addTo(map);
+
+    marker.bindPopup(
+        "<strong>" + name + "</strong><br>" +
+        category + "<br>" +
+        latitude.toFixed(5) + ", " +
+        longitude.toFixed(5)
+    );
+
+    marker.openPopup();
+}
+    </script>
+</body>
+</html>
