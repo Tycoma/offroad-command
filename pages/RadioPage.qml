@@ -5,7 +5,7 @@ import QtQuick.Layouts
 Item {
     id: page
 
-    property string pageTitle: "MEDIA"
+    property string pageTitle: "RADIO"
 
     property color panelColor: "#141b23"
     property color borderColor: "#2a3947"
@@ -16,6 +16,15 @@ Item {
     property color dangerColor: "#ff5d5d"
     property color successColor: "#55d889"
 
+    property int currentChannel: 4
+    property string channelName: "CHASE"
+    property string frequency: "151.6250"
+    property int volume: 65
+    property int squelch: 4
+    property bool scanning: false
+    property bool transmitting: false
+    property bool receiving: false
+
     Rectangle {
         anchors.fill: parent
         color: "#090d12"
@@ -23,15 +32,151 @@ Item {
         RowLayout {
             anchors.fill: parent
             anchors.margins: 20
-            spacing: 22
+            spacing: 18
 
             Rectangle {
-                Layout.preferredWidth: Math.min(
-                    page.width * 0.36,
-                    page.height * 0.72
-                )
-
+                Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.preferredWidth: 1.7
+
+                radius: 18
+                color: page.panelColor
+
+                border.width: 1
+                border.color: page.borderColor
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: 26
+                    spacing: 12
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Label {
+                            text: "VHF RADIO"
+                            color: page.textColor
+                            font.pixelSize: 25
+                            font.bold: true
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
+
+                        Rectangle {
+                            width: 88
+                            height: 34
+                            radius: 17
+
+                            color: page.transmitting
+                                   ? "#5a1717"
+                                   : page.receiving
+                                     ? "#153c2b"
+                                     : "#1b2530"
+
+                            border.width: 1
+
+                            border.color: page.transmitting
+                                          ? page.dangerColor
+                                          : page.receiving
+                                            ? page.successColor
+                                            : page.borderColor
+
+                            Label {
+                                anchors.centerIn: parent
+
+                                text: page.transmitting
+                                      ? "TX"
+                                      : page.receiving
+                                        ? "RX"
+                                        : "READY"
+
+                                color: page.transmitting
+                                       ? page.dangerColor
+                                       : page.receiving
+                                         ? page.successColor
+                                         : page.secondaryTextColor
+
+                                font.pixelSize: 14
+                                font.bold: true
+                            }
+                        }
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignHCenter
+
+                        text: "CHANNEL " + page.currentChannel
+                        color: page.secondaryTextColor
+
+                        font.pixelSize: 18
+                        font.bold: true
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignHCenter
+
+                        text: page.channelName
+                        color: page.accentColor
+
+                        font.pixelSize: 28
+                        font.bold: true
+                    }
+
+                    Label {
+                        Layout.alignment: Qt.AlignHCenter
+
+                        text: page.frequency + " MHz"
+                        color: page.textColor
+
+                        font.pixelSize: 52
+                        font.bold: true
+                    }
+
+                    Item {
+                        Layout.fillHeight: true
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 74
+                        spacing: 12
+
+                        Button {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            text: "CHANNEL -"
+
+                            onClicked: {
+                                if (page.currentChannel > 1)
+                                    page.currentChannel--
+                            }
+                        }
+
+                        Button {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            text: "CHANNEL +"
+
+                            onClicked: {
+                                page.currentChannel++
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.preferredWidth: 1
 
                 radius: 18
                 color: page.panelColor
@@ -42,289 +187,82 @@ Item {
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 22
-                    spacing: 14
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: width
-
-                        radius: 16
-                        color: "#1d2935"
-
-                        border.width: 1
-                        border.color: page.borderColor
-
-                        Column {
-                            anchors.centerIn: parent
-                            spacing: 12
-
-                            Label {
-                                anchors.horizontalCenter: parent.horizontalCenter
-
-                                text: "♪"
-                                color: page.accentColor
-                                font.pixelSize: 88
-                                font.bold: true
-                            }
-
-                            Label {
-                                anchors.horizontalCenter: parent.horizontalCenter
-
-                                text: "BLUETOOTH AUDIO"
-                                color: page.secondaryTextColor
-                                font.pixelSize: 14
-                                font.bold: true
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 52
-
-                        radius: 10
-
-                        color: mediaBackend.connected
-                               ? "#153c2b"
-                               : "#3b2c15"
-
-                        border.width: 1
-
-                        border.color: mediaBackend.connected
-                                      ? page.successColor
-                                      : page.warningColor
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 14
-                            anchors.rightMargin: 14
-
-                            Rectangle {
-                                width: 12
-                                height: 12
-                                radius: 6
-
-                                color: mediaBackend.connected
-                                       ? page.successColor
-                                       : page.warningColor
-                            }
-
-                            Label {
-                                text: mediaBackend.connected
-                                      ? "PHONE CONNECTED"
-                                      : "WAITING FOR PHONE"
-
-                                color: page.textColor
-                                font.pixelSize: 13
-                                font.bold: true
-                            }
-
-                            Item {
-                                Layout.fillWidth: true
-                            }
-
-                            Button {
-                                text: "REFRESH"
-                                onClicked: mediaBackend.refresh()
-                            }
-                        }
-                    }
-                }
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-
-                radius: 18
-                color: page.panelColor
-
-                border.width: 1
-                border.color: page.borderColor
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 28
-                    spacing: 12
+                    spacing: 10
 
                     Label {
-                        Layout.fillWidth: true
-
-                        text: mediaBackend.title
-
+                        text: "RADIO CONTROLS"
                         color: page.textColor
-                        elide: Text.ElideRight
 
-                        font.pixelSize: 34
+                        font.pixelSize: 21
                         font.bold: true
                     }
 
                     Label {
-                        Layout.fillWidth: true
-
-                        text: mediaBackend.artist
-
-                        color: page.accentColor
-                        elide: Text.ElideRight
-
-                        font.pixelSize: 23
-                        font.bold: true
-                    }
-
-                    Label {
-                        Layout.fillWidth: true
-
-                        text: mediaBackend.album
-
-                        visible: text.length > 0
+                        text: "VOLUME  " + volumeSlider.value.toFixed(0) + "%"
                         color: page.secondaryTextColor
-                        elide: Text.ElideRight
-
-                        font.pixelSize: 17
-                    }
-
-                    Label {
-                        text: mediaBackend.playbackStatus.toUpperCase()
-
-                        color: mediaBackend.playbackStatus === "Playing"
-                               ? page.successColor
-                               : page.warningColor
-
-                        font.pixelSize: 14
                         font.bold: true
                     }
 
-                    Item {
-                        Layout.fillHeight: true
-                    }
+                    Slider {
+                        id: volumeSlider
 
-                    RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 100
 
-                        spacing: 20
+                        from: 0
+                        to: 100
+                        value: page.volume
 
-                        Item {
-                            Layout.fillWidth: true
-                        }
-
-                        Button {
-                            Layout.preferredWidth: 96
-                            Layout.fillHeight: true
-
-                            text: "◀◀"
-                            font.pixelSize: 30
-
-                            enabled: mediaBackend.connected
-
-                            onClicked: mediaBackend.previous()
-                        }
-
-                        Button {
-                            Layout.preferredWidth: 126
-                            Layout.fillHeight: true
-
-                            text: mediaBackend.playbackStatus === "Playing"
-                                  ? "❚❚"
-                                  : "▶"
-
-                            font.pixelSize: 40
-
-                            enabled: mediaBackend.connected
-
-                            onClicked: mediaBackend.playPause()
-                        }
-
-                        Button {
-                            Layout.preferredWidth: 96
-                            Layout.fillHeight: true
-
-                            text: "▶▶"
-                            font.pixelSize: 30
-
-                            enabled: mediaBackend.connected
-
-                            onClicked: mediaBackend.next()
-                        }
-
-                        Item {
-                            Layout.fillWidth: true
-                        }
-                    }
-
-                    Item {
-                        Layout.fillHeight: true
+                        onMoved: page.volume = Math.round(value)
                     }
 
                     Label {
-                        text: "OUTPUT VOLUME  " + volumeSlider.value.toFixed(0) + "%"
-
+                        text: "SQUELCH  " + squelchSlider.value.toFixed(0)
                         color: page.secondaryTextColor
-
-                        font.pixelSize: 14
                         font.bold: true
                     }
 
-                    RowLayout {
+                    Slider {
+                        id: squelchSlider
+
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 66
 
-                        spacing: 14
+                        from: 0
+                        to: 10
+                        stepSize: 1
+                        value: page.squelch
 
-                        Label {
-                            text: "−"
-                            color: page.textColor
-                            font.pixelSize: 30
-                        }
-
-                        Slider {
-                            id: volumeSlider
-
-                            Layout.fillWidth: true
-
-                            from: 0
-                            to: 100
-                            stepSize: 1
-
-                            value: mediaBackend.volume
-
-                            onMoved: {
-                                mediaBackend.setVolume(
-                                    Math.round(value)
-                                )
-                            }
-                        }
-
-                        Label {
-                            text: "+"
-                            color: page.textColor
-                            font.pixelSize: 30
-                        }
+                        onMoved: page.squelch = Math.round(value)
                     }
 
-                    Label {
+                    Button {
                         Layout.fillWidth: true
+                        Layout.preferredHeight: 70
 
-                        visible: mediaBackend.error.length > 0
-                        text: mediaBackend.error
+                        text: page.scanning ? "STOP SCAN" : "SCAN"
 
-                        color: page.dangerColor
-                        wrapMode: Text.WordWrap
+                        onClicked: page.scanning = !page.scanning
+                    }
 
-                        font.pixelSize: 12
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        text: page.transmitting
+                              ? "TRANSMITTING"
+                              : "PUSH TO TALK"
+
+                        onPressed: page.transmitting = true
+                        onReleased: page.transmitting = false
+                    }
+
+                    Button {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 58
+
+                        text: "MONITOR"
                     }
                 }
             }
-        }
-    }
-
-    Connections {
-        target: mediaBackend
-
-        function onVolumeChanged() {
-            if (!volumeSlider.pressed)
-                volumeSlider.value = mediaBackend.volume
         }
     }
 }
-

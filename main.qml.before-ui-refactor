@@ -1,0 +1,593 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+import "pages"
+import "components"
+
+ApplicationWindow {
+    id: root
+
+    visible: true
+    visibility: Window.FullScreen
+
+    width: 1280
+    height: 800
+
+    title: "Off-Road Command"
+    color: "#090d12"
+
+    property int currentPage: 0
+
+    readonly property color backgroundColor: "#090d12"
+    readonly property color panelColor: "#141b23"
+    readonly property color borderColor: "#2a3947"
+    readonly property color accentColor: "#2da8ff"
+    readonly property color textColor: "#f4f7fa"
+    readonly property color secondaryTextColor: "#8fa1b2"
+    readonly property color warningColor: "#ffb347"
+    readonly property color dangerColor: "#ff3b3b"
+    readonly property color successColor: "#55d889"
+
+    // Simulated GPS values until the receiver is installed.
+    property int gpsSpeed: 34
+    property int gpsHeading: 127
+    property int gpsSatellites: 12
+
+    // Simulated engine values until CAN is installed.
+    property int engineRpm: 2450
+    property int coolantTemp: 185
+    property int oilPressure: 58
+    property real batteryVoltage: 14.2
+
+    // Initial critical limits. We can make these configurable later.
+    property int maxCoolantTemp: 230
+    property int minOilPressure: 15
+    property real minBatteryVoltage: 11.5
+    property int maxEngineRpm: 6500
+
+    property bool simulationWarningsEnabled: true
+
+    function changePage(pageNumber) {
+        currentPage = pageNumber
+        pageStack.currentIndex = pageNumber
+    }
+
+    function nowPlayingText() {
+        if (
+            mediaBackend.connected
+            && mediaBackend.title !== ""
+            && mediaBackend.title !== "No media playing"
+            && mediaBackend.title !== "Bluetooth Audio"
+        ) {
+            var songText = mediaBackend.title
+
+            if (
+                mediaBackend.artist !== ""
+                && mediaBackend.artist !== "Connected phone"
+            ) {
+                songText += " - " + mediaBackend.artist
+            }
+
+            return "NOW PLAYING  " + songText
+        }
+
+        if (mediaBackend.connected)
+            return "BLUETOOTH AUDIO READY"
+
+        return "NO PHONE CONNECTED"
+    }
+
+    function criticalWarningText() {
+        if (coolantTemp >= maxCoolantTemp)
+            return "CRITICAL ENGINE WARNING - COOLANT "
+                   + coolantTemp + " F"
+
+        if (oilPressure <= minOilPressure && engineRpm > 800)
+            return "CRITICAL ENGINE WARNING - OIL PRESSURE "
+                   + oilPressure + " PSI"
+
+        if (batteryVoltage <= minBatteryVoltage)
+            return "CRITICAL ELECTRICAL WARNING - BATTERY "
+                   + batteryVoltage.toFixed(1) + " V"
+
+        if (engineRpm >= maxEngineRpm)
+            return "CRITICAL ENGINE WARNING - OVER REV "
+                   + engineRpm + " RPM"
+
+        return ""
+    }
+
+    function headingName(heading) {
+        if (heading >= 337.5 || heading < 22.5)
+            return "N"
+
+        if (heading < 67.5)
+            return "NE"
+
+        if (heading < 112.5)
+            return "E"
+
+        if (heading < 157.5)
+            return "SE"
+
+        if (heading < 202.5)
+            return "S"
+
+        if (heading < 247.5)
+            return "SW"
+
+        if (heading < 292.5)
+            return "W"
+
+        return "NW"
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        onActivated: root.close()
+    }
+
+    Shortcut {
+        sequence: "F11"
+
+        onActivated: {
+            if (root.visibility === Window.FullScreen)
+                root.visibility = Window.Windowed
+            else
+                root.visibility = Window.FullScreen
+        }
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: 0
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 62
+
+            color: "#0c1117"
+
+            border.width: 1
+            border.color: root.borderColor
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 18
+                anchors.rightMargin: 18
+                spacing: 18
+
+                Label {
+                    text: "RADIO  CH 4"
+                    color: root.textColor
+                    font.pixelSize: 16
+                    font.bold: true
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 2
+                    Layout.preferredHeight: 28
+                    color: root.borderColor
+                }
+
+                Label {
+                    text: "GPS  " + root.gpsSatellites + " SAT"
+                    color: root.textColor
+                    font.pixelSize: 16
+                    font.bold: true
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 2
+                    Layout.preferredHeight: 28
+                    color: root.borderColor
+                }
+
+                Label {
+                    text: mediaBackend.connected
+                          ? "BT CONNECTED"
+                          : "BT OFFLINE"
+
+                    color: mediaBackend.connected
+                           ? root.accentColor
+                           : root.secondaryTextColor
+
+                    font.pixelSize: 16
+                    font.bold: true
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 2
+                    Layout.preferredHeight: 28
+                    color: root.borderColor
+                }
+
+                Label {
+                    Layout.fillWidth: true
+
+                    text: root.nowPlayingText()
+
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+
+                    color: root.accentColor
+                    font.pixelSize: 16
+                    font.bold: true
+
+                    elide: Text.ElideRight
+                    maximumLineCount: 1
+                }
+
+                Rectangle {
+                    Layout.preferredWidth: 2
+                    Layout.preferredHeight: 28
+                    color: root.borderColor
+                }
+
+                Label {
+                    id: clockLabel
+
+                    text: Qt.formatTime(new Date(), "h:mm AP")
+                    color: root.textColor
+
+                    font.pixelSize: 18
+                    font.bold: true
+                }
+            }
+
+            Timer {
+                interval: 1000
+                running: true
+                repeat: true
+
+                onTriggered: {
+                    clockLabel.text =
+                            Qt.formatTime(new Date(), "h:mm AP")
+                }
+            }
+        }
+
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            StackLayout {
+                id: pageStack
+
+                anchors.fill: parent
+                currentIndex: root.currentPage
+
+                MapsPage {
+                    panelColor: root.panelColor
+                    borderColor: root.borderColor
+                    accentColor: root.accentColor
+                    textColor: root.textColor
+                    secondaryTextColor: root.secondaryTextColor
+                    warningColor: root.warningColor
+                    dangerColor: root.dangerColor
+                    successColor: root.successColor
+                }
+
+                MediaPage {
+                    panelColor: root.panelColor
+                    borderColor: root.borderColor
+                    accentColor: root.accentColor
+                    textColor: root.textColor
+                    secondaryTextColor: root.secondaryTextColor
+                    warningColor: root.warningColor
+                    dangerColor: root.dangerColor
+                    successColor: root.successColor
+                }
+
+                RadioPage {
+                    panelColor: root.panelColor
+                    borderColor: root.borderColor
+                    accentColor: root.accentColor
+                    textColor: root.textColor
+                    secondaryTextColor: root.secondaryTextColor
+                    warningColor: root.warningColor
+                    dangerColor: root.dangerColor
+                    successColor: root.successColor
+                }
+
+                PlaceholderPage {
+                    pageTitle: "ENGINE"
+                    description: "MEFI-4 engine gauges and diagnostics"
+                }
+
+                PlaceholderPage {
+                    pageTitle: "CAMERAS"
+                    description: "Vehicle camera system"
+                }
+
+                PlaceholderPage {
+                    pageTitle: "VEHICLE"
+                    description: "Lights, compressor and PDM controls"
+                }
+
+                PlaceholderPage {
+                    pageTitle: "SETTINGS"
+                    description: "Display and connection settings"
+                }
+            }
+
+            // Ghosted GPS speed shown only over the map.
+            Column {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 18
+
+                visible: root.currentPage === 0
+                opacity: 0.42
+                spacing: -6
+
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+
+                    text: root.gpsSpeed
+                    color: "white"
+
+                    font.pixelSize: 76
+                    font.bold: true
+                }
+
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+
+                    text: "MPH"
+                    color: "white"
+
+                    font.pixelSize: 19
+                    font.bold: true
+                }
+            }
+
+            // Ghosted heading/compass indicator.
+            Rectangle {
+                anchors.top: parent.top
+                anchors.right: parent.right
+
+                anchors.topMargin: 18
+                anchors.rightMargin: 18
+
+                width: 132
+                height: 132
+                radius: 66
+
+                visible: root.currentPage === 0
+                opacity: 0.46
+
+                color: "#80101820"
+
+                border.width: 2
+                border.color: "white"
+
+                Rectangle {
+                    anchors.centerIn: parent
+
+                    width: 4
+                    height: 45
+                    radius: 2
+
+                    color: root.accentColor
+
+                    transform: Rotation {
+                        origin.x: 2
+                        origin.y: 45
+
+                        angle: root.gpsHeading
+                    }
+                }
+
+                Rectangle {
+                    anchors.centerIn: parent
+
+                    width: 12
+                    height: 12
+                    radius: 6
+
+                    color: "white"
+                }
+
+                Label {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.topMargin: 8
+
+                    text: "N"
+                    color: "white"
+
+                    font.pixelSize: 16
+                    font.bold: true
+                }
+
+                Label {
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: 28
+
+                    text: root.headingName(root.gpsHeading)
+                          + "  "
+                          + root.gpsHeading
+                          + " DEG"
+
+                    color: "white"
+
+                    font.pixelSize: 13
+                    font.bold: true
+                }
+            }
+
+            // Critical alerts appear above every page.
+            Rectangle {
+                id: criticalAlert
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+
+                height: 105
+
+                visible: root.criticalWarningText() !== ""
+                z: 1000
+
+                color: root.dangerColor
+
+                border.width: 4
+                border.color: "white"
+
+                SequentialAnimation on opacity {
+                    running: criticalAlert.visible
+                    loops: Animation.Infinite
+
+                    NumberAnimation {
+                        from: 1.0
+                        to: 0.35
+                        duration: 420
+                    }
+
+                    NumberAnimation {
+                        from: 0.35
+                        to: 1.0
+                        duration: 420
+                    }
+                }
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: 28
+                    anchors.rightMargin: 28
+                    spacing: 24
+
+                    Label {
+                        text: "WARNING"
+                        color: "white"
+
+                        font.pixelSize: 29
+                        font.bold: true
+                    }
+
+                    Rectangle {
+                        Layout.preferredWidth: 3
+                        Layout.fillHeight: true
+                        Layout.topMargin: 16
+                        Layout.bottomMargin: 16
+
+                        color: "white"
+                    }
+
+                    Label {
+                        Layout.fillWidth: true
+
+                        text: root.criticalWarningText()
+
+                        color: "white"
+
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+
+                        font.pixelSize: 27
+                        font.bold: true
+                    }
+
+                    Button {
+                        Layout.preferredWidth: 125
+                        Layout.preferredHeight: 60
+
+                        text: "ACKNOWLEDGE"
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 70
+
+            color: "#0c1117"
+
+            border.width: 1
+            border.color: root.borderColor
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 8
+
+                NavButton {
+                    text: "MAPS"
+                    selected: root.currentPage === 0
+                    onClicked: root.changePage(0)
+                }
+
+                NavButton {
+                    text: "MEDIA"
+                    selected: root.currentPage === 1
+                    onClicked: root.changePage(1)
+                }
+
+                NavButton {
+                    text: "RADIO"
+                    selected: root.currentPage === 2
+                    onClicked: root.changePage(2)
+                }
+
+                NavButton {
+                    text: "ENGINE"
+                    selected: root.currentPage === 3
+                    onClicked: root.changePage(3)
+                }
+
+                NavButton {
+                    text: "CAMERAS"
+                    selected: root.currentPage === 4
+                    onClicked: root.changePage(4)
+                }
+
+                NavButton {
+                    text: "VEHICLE"
+                    selected: root.currentPage === 5
+                    onClicked: root.changePage(5)
+                }
+
+                NavButton {
+                    text: "SETTINGS"
+                    selected: root.currentPage === 6
+                    onClicked: root.changePage(6)
+                }
+            }
+        }
+    }
+
+    // Simulated GPS and engine values.
+    Timer {
+        interval: 900
+        running: true
+        repeat: true
+
+        onTriggered: {
+            root.gpsSpeed =
+                    30 + Math.floor(Math.random() * 11)
+
+            root.gpsHeading =
+                    (root.gpsHeading + 3) % 360
+
+            root.engineRpm =
+                    2200 + Math.floor(Math.random() * 600)
+
+            root.coolantTemp =
+                    184 + Math.floor(Math.random() * 8)
+
+            root.oilPressure =
+                    54 + Math.floor(Math.random() * 8)
+
+            root.batteryVoltage =
+                    13.9 + Math.random() * 0.5
+
+            if (root.simulationWarningsEnabled) {
+                if (Math.random() > 0.92)
+                    root.coolantTemp = 238
+            }
+        }
+    }
+}

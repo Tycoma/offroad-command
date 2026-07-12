@@ -20,12 +20,23 @@ Item {
     property bool recording: false
     property bool mapLoaded: false
     property bool followVehicle: true
+    property bool toolsVisible: false
 
     property int simulatedSpeed: 34
     property int simulatedRpm: 2450
     property int simulatedOilPressure: 58
     property int simulatedCoolant: 188
     property real simulatedBattery: 14.2
+
+    function showTools() {
+        toolsVisible = true
+        hideToolsTimer.restart()
+    }
+
+    function hideTools() {
+        toolsVisible = false
+        hideToolsTimer.stop()
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -45,13 +56,17 @@ Item {
             settings.javascriptEnabled: true
 
             onLoadingChanged: function(loadRequest) {
-                if (loadRequest.status ===
-                        WebEngineView.LoadSucceededStatus) {
+                if (
+                    loadRequest.status
+                    === WebEngineView.LoadSucceededStatus
+                ) {
                     page.mapLoaded = true
                 }
 
-                if (loadRequest.status ===
-                        WebEngineView.LoadFailedStatus) {
+                if (
+                    loadRequest.status
+                    === WebEngineView.LoadFailedStatus
+                ) {
                     console.log(
                         "Map load failed:",
                         loadRequest.errorString
@@ -60,102 +75,87 @@ Item {
             }
         }
 
+        /*
+         * Transparent tap layer.
+         *
+         * A normal tap shows or hides the map controls.
+         * The click is passed through so Leaflet can still handle
+         * map interaction.
+         */
+        MouseArea {
+            anchors.fill: parent
+
+            acceptedButtons: Qt.LeftButton
+            propagateComposedEvents: true
+            preventStealing: false
+
+            onClicked: function(mouse) {
+                if (
+                    navigationDrawer.opened
+                    || vehicleDrawer.opened
+                    || waypointPopup.opened
+                    || layersPopup.opened
+                    || gotoPopup.opened
+                ) {
+                    mouse.accepted = false
+                    return
+                }
+
+                if (page.toolsVisible)
+                    page.hideTools()
+                else
+                    page.showTools()
+
+                mouse.accepted = false
+            }
+        }
+
+        /*
+         * Small status indicator.
+         * This replaces the large map-page header.
+         */
         Rectangle {
             anchors.top: parent.top
-            anchors.left: parent.left
             anchors.right: parent.right
 
-            anchors.margins: 12
+            anchors.topMargin: 14
+            anchors.rightMargin: 14
 
-            height: 54
-            radius: 12
+            width: statusLabel.implicitWidth + 26
+            height: 38
+            radius: 19
 
-            color: "#e60a0f15"
+            color: "#d90a0f15"
 
             border.width: 1
             border.color: page.borderColor
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 14
-                anchors.rightMargin: 14
+            Label {
+                id: statusLabel
 
-                spacing: 16
+                anchors.centerIn: parent
 
-                Button {
-                    Layout.preferredWidth: 56
-                    Layout.fillHeight: true
+                text: page.recording
+                      ? "REC"
+                      : page.mapLoaded
+                        ? "MAP READY"
+                        : "LOADING"
 
-                    text: "☰"
-                    font.pixelSize: 24
+                color: page.recording
+                       ? page.dangerColor
+                       : page.mapLoaded
+                         ? page.successColor
+                         : page.warningColor
 
-                    onClicked: navigationDrawer.open()
-                }
-
-                Label {
-                    text: page.recording
-                          ? "REC ●"
-                          : page.mapLoaded
-                            ? "GPS SIM"
-                            : "LOADING"
-
-                    color: page.recording
-                           ? page.dangerColor
-                           : page.mapLoaded
-                             ? page.successColor
-                             : page.warningColor
-
-                    font.pixelSize: 14
-                    font.bold: true
-                }
-
-                Label {
-                    text: page.simulatedSpeed + " MPH"
-                    color: page.textColor
-
-                    font.pixelSize: 16
-                    font.bold: true
-                }
-
-                Label {
-                    text: page.simulatedRpm + " RPM"
-                    color: page.textColor
-
-                    font.pixelSize: 14
-                    font.bold: true
-                }
-
-                Label {
-                    text: "CH 4"
-                    color: page.accentColor
-
-                    font.pixelSize: 14
-                    font.bold: true
-                }
-
-                Item {
-                    Layout.fillWidth: true
-                }
-
-                Label {
-                    text: "PHOENIX, AZ"
-                    color: page.secondaryTextColor
-
-                    font.pixelSize: 13
-                    font.bold: true
-                }
-
-                Button {
-                    Layout.preferredWidth: 60
-                    Layout.fillHeight: true
-
-                    text: "INFO"
-
-                    onClicked: vehicleDrawer.open()
-                }
+                font.pixelSize: 12
+                font.bold: true
             }
         }
 
+        /*
+         * Floating map controls.
+         * They appear with the lower toolbar after tapping the map.
+         */
         Column {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
@@ -163,27 +163,53 @@ Item {
 
             spacing: 8
 
+            visible: page.toolsVisible
+            opacity: page.toolsVisible ? 1 : 0
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 160
+                }
+            }
+
             Button {
-                width: 62
+                width: 64
                 height: 58
 
                 text: "+"
                 font.pixelSize: 26
 
                 onClicked: {
+                    page.showTools()
                     mapView.runJavaScript("zoomIn();")
                 }
             }
 
             Button {
-                width: 62
+                width: 64
                 height: 58
 
-                text: "−"
+                text: "-"
                 font.pixelSize: 26
 
                 onClicked: {
+                    page.showTools()
                     mapView.runJavaScript("zoomOut();")
+                }
+            }
+
+            Button {
+                width: 64
+                height: 58
+
+                text: "MENU"
+
+                font.pixelSize: 11
+                font.bold: true
+
+                onClicked: {
+                    page.showTools()
+                    navigationDrawer.open()
                 }
             }
         }
@@ -195,14 +221,24 @@ Item {
             anchors.rightMargin: 18
             anchors.bottomMargin: 14
 
-            width: 78
-            height: 64
+            width: 82
+            height: 62
+
+            visible: page.toolsVisible
+            opacity: page.toolsVisible ? 1 : 0
 
             text: page.followVehicle
                   ? "FOLLOW"
                   : "FREE"
 
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 160
+                }
+            }
+
             onClicked: {
+                page.showTools()
                 page.followVehicle = !page.followVehicle
 
                 if (page.followVehicle) {
@@ -213,6 +249,9 @@ Item {
             }
         }
 
+        /*
+         * Bottom toolbar is hidden until the map is tapped.
+         */
         Rectangle {
             id: bottomToolbar
 
@@ -220,15 +259,34 @@ Item {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
 
-            anchors.margins: 12
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+            anchors.bottomMargin: page.toolsVisible ? 12 : -90
 
             height: 72
             radius: 12
+
+            visible: opacity > 0
+
+            opacity: page.toolsVisible ? 1 : 0
 
             color: "#ed0a0f15"
 
             border.width: 1
             border.color: page.borderColor
+
+            Behavior on anchors.bottomMargin {
+                NumberAnimation {
+                    duration: 180
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Behavior on opacity {
+                NumberAnimation {
+                    duration: 160
+                }
+            }
 
             RowLayout {
                 anchors.fill: parent
@@ -243,6 +301,7 @@ Item {
                     text: "WAYPOINT"
 
                     onClicked: {
+                        page.showTools()
                         waypointStatus.text = ""
                         waypointPopup.open()
                     }
@@ -257,6 +316,7 @@ Item {
                           : "RECORD"
 
                     onClicked: {
+                        page.showTools()
                         page.recording = !page.recording
 
                         mapView.runJavaScript(
@@ -271,7 +331,10 @@ Item {
 
                     text: "ROUTES"
 
-                    onClicked: navigationDrawer.open()
+                    onClicked: {
+                        page.showTools()
+                        navigationDrawer.open()
+                    }
                 }
 
                 Button {
@@ -280,7 +343,10 @@ Item {
 
                     text: "TRACKS"
 
-                    onClicked: navigationDrawer.open()
+                    onClicked: {
+                        page.showTools()
+                        navigationDrawer.open()
+                    }
                 }
 
                 Button {
@@ -289,7 +355,10 @@ Item {
 
                     text: "LAYERS"
 
-                    onClicked: layersPopup.open()
+                    onClicked: {
+                        page.showTools()
+                        layersPopup.open()
+                    }
                 }
 
                 Button {
@@ -298,8 +367,30 @@ Item {
 
                     text: "GO TO"
 
-                    onClicked: gotoPopup.open()
+                    onClicked: {
+                        page.showTools()
+                        gotoPopup.open()
+                    }
                 }
+            }
+        }
+    }
+
+    Timer {
+        id: hideToolsTimer
+
+        interval: 6000
+        repeat: false
+
+        onTriggered: {
+            if (
+                !navigationDrawer.opened
+                && !vehicleDrawer.opened
+                && !waypointPopup.opened
+                && !layersPopup.opened
+                && !gotoPopup.opened
+            ) {
+                page.toolsVisible = false
             }
         }
     }
@@ -314,6 +405,8 @@ Item {
 
         modal: true
         interactive: true
+
+        onClosed: page.showTools()
 
         background: Rectangle {
             color: page.panelColor
@@ -330,6 +423,7 @@ Item {
 
             Label {
                 text: "NAVIGATION"
+
                 color: page.textColor
 
                 font.pixelSize: 25
@@ -338,6 +432,7 @@ Item {
 
             Label {
                 text: "Offline maps and trip tools"
+
                 color: page.secondaryTextColor
 
                 font.pixelSize: 13
@@ -418,6 +513,8 @@ Item {
         modal: true
         interactive: true
 
+        onClosed: page.showTools()
+
         background: Rectangle {
             color: page.panelColor
 
@@ -433,6 +530,7 @@ Item {
 
             Label {
                 text: "VEHICLE STATUS"
+
                 color: page.textColor
 
                 font.pixelSize: 25
@@ -441,6 +539,7 @@ Item {
 
             Label {
                 text: "Simulated vehicle data"
+
                 color: page.warningColor
 
                 font.pixelSize: 13
@@ -566,7 +665,7 @@ Item {
                     }
 
                     Label {
-                        text: page.simulatedCoolant + "°F"
+                        text: page.simulatedCoolant + " F"
                         color: page.textColor
                         font.pixelSize: 22
                         font.bold: true
@@ -604,36 +703,6 @@ Item {
                 }
             }
 
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 76
-
-                radius: 10
-                color: "#1b2530"
-
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 14
-
-                    Label {
-                        text: "RADIO"
-                        color: page.secondaryTextColor
-                        font.bold: true
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                    }
-
-                    Label {
-                        text: "CH 4 • CHASE"
-                        color: page.accentColor
-                        font.pixelSize: 18
-                        font.bold: true
-                    }
-                }
-            }
-
             Item {
                 Layout.fillHeight: true
             }
@@ -663,6 +732,8 @@ Item {
         closePolicy: Popup.CloseOnEscape |
                      Popup.CloseOnPressOutside
 
+        onClosed: page.showTools()
+
         background: Rectangle {
             radius: 14
             color: page.panelColor
@@ -679,6 +750,7 @@ Item {
 
             Label {
                 text: "ADD WAYPOINT"
+
                 color: page.textColor
 
                 font.pixelSize: 22
@@ -738,10 +810,7 @@ Item {
 
                     text: "CANCEL"
 
-                    onClicked: {
-                        waypointStatus.text = ""
-                        waypointPopup.close()
-                    }
+                    onClicked: waypointPopup.close()
                 }
 
                 Button {
@@ -753,12 +822,8 @@ Item {
                         if (waypointName.text.trim() === "") {
                             waypointStatus.text =
                                     "Enter a waypoint name."
-
                             return
                         }
-
-                        waypointStatus.text =
-                                "Saving waypoint..."
 
                         mapView.runJavaScript(
                             "getVehiclePositionJson();",
@@ -790,13 +855,9 @@ Item {
                                             ");"
                                         )
 
-                                        waypointStatus.text =
-                                                "Waypoint saved."
-
                                         waypointName.clear()
                                         waypointNotes.clear()
                                         waypointCategory.currentIndex = 0
-
                                         waypointPopup.close()
                                     } else {
                                         waypointStatus.text =
@@ -805,11 +866,6 @@ Item {
                                 } catch (error) {
                                     waypointStatus.text =
                                             "Invalid map position."
-
-                                    console.log(
-                                        "Waypoint error:",
-                                        error
-                                    )
                                 }
                             }
                         )
@@ -833,6 +889,8 @@ Item {
         closePolicy: Popup.CloseOnEscape |
                      Popup.CloseOnPressOutside
 
+        onClosed: page.showTools()
+
         background: Rectangle {
             radius: 14
             color: page.panelColor
@@ -849,6 +907,7 @@ Item {
 
             Label {
                 text: "MAP LAYERS"
+
                 color: page.textColor
 
                 font.pixelSize: 22
@@ -910,6 +969,8 @@ Item {
         closePolicy: Popup.CloseOnEscape |
                      Popup.CloseOnPressOutside
 
+        onClosed: page.showTools()
+
         background: Rectangle {
             radius: 14
             color: page.panelColor
@@ -926,6 +987,7 @@ Item {
 
             Label {
                 text: "GO TO LOCATION"
+
                 color: page.textColor
 
                 font.pixelSize: 22

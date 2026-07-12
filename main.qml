@@ -26,37 +26,71 @@ ApplicationWindow {
     readonly property color textColor: "#f4f7fa"
     readonly property color secondaryTextColor: "#8fa1b2"
     readonly property color warningColor: "#ffb347"
-    readonly property color dangerColor: "#ff5d5d"
+    readonly property color dangerColor: "#ff3b3b"
     readonly property color successColor: "#55d889"
+
+    property int radioChannel: 4
+
+    property int gpsSpeed: 34
+    property int gpsHeading: 127
+    property int gpsSatellites: 12
+
+    property int engineRpm: 2450
+    property int coolantTemp: 188
+    property int oilPressure: 58
+    property real batteryVoltage: 14.2
+
+    property int maxCoolantTemp: 230
+    property int minOilPressure: 15
+    property real minBatteryVoltage: 11.5
+    property int maxEngineRpm: 6500
+
+    property bool warningAcknowledged: false
+    property string lastWarningText: ""
 
     function changePage(pageNumber) {
         currentPage = pageNumber
         pageStack.currentIndex = pageNumber
     }
 
-    function nowPlayingText() {
-        if (
-            mediaBackend.connected
-            && mediaBackend.title !== ""
-            && mediaBackend.title !== "No media playing"
-            && mediaBackend.title !== "Bluetooth Audio"
-        ) {
-            var songText = mediaBackend.title
+    function criticalWarningText() {
+        if (coolantTemp >= maxCoolantTemp)
+            return "CRITICAL ENGINE WARNING - COOLANT "
+                   + coolantTemp + " F"
 
-            if (
-                mediaBackend.artist !== ""
-                && mediaBackend.artist !== "Connected phone"
-            ) {
-                songText += " - " + mediaBackend.artist
-            }
+        if (oilPressure <= minOilPressure && engineRpm > 800)
+            return "CRITICAL ENGINE WARNING - OIL PRESSURE "
+                   + oilPressure + " PSI"
 
-            return "NOW PLAYING  " + songText
+        if (batteryVoltage <= minBatteryVoltage)
+            return "CRITICAL ELECTRICAL WARNING - BATTERY "
+                   + batteryVoltage.toFixed(1) + " V"
+
+        if (engineRpm >= maxEngineRpm)
+            return "CRITICAL ENGINE WARNING - OVER REV "
+                   + engineRpm + " RPM"
+
+        return ""
+    }
+
+    function visibleWarningText() {
+        var warning = criticalWarningText()
+
+        if (warning === "") {
+            warningAcknowledged = false
+            lastWarningText = ""
+            return ""
         }
 
-        if (mediaBackend.connected)
-            return "BLUETOOTH AUDIO READY"
+        if (warning !== lastWarningText) {
+            warningAcknowledged = false
+            lastWarningText = warning
+        }
 
-        return "NO PHONE CONNECTED"
+        if (warningAcknowledged)
+            return ""
+
+        return warning
     }
 
     Shortcut {
@@ -79,215 +113,169 @@ ApplicationWindow {
         anchors.fill: parent
         spacing: 0
 
-        Rectangle {
+        AppHeader {
             Layout.fillWidth: true
             Layout.preferredHeight: 62
 
-            color: "#0c1117"
+            panelColor: "#0c1117"
+            borderColor: root.borderColor
+            accentColor: root.accentColor
+            textColor: root.textColor
+            secondaryTextColor: root.secondaryTextColor
 
-            border.width: 1
-            border.color: root.borderColor
+            radioChannel: root.radioChannel
+            gpsSatellites: root.gpsSatellites
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 18
-                anchors.rightMargin: 18
-
-                spacing: 18
-
-                Label {
-                    text: "RADIO  CH 4"
-                    color: root.textColor
-                    font.pixelSize: 16
-                    font.bold: true
-                }
-
-                Rectangle {
-                    Layout.preferredWidth: 2
-                    Layout.preferredHeight: 28
-                    color: root.borderColor
-                }
-
-                Label {
-                    text: "GPS  12 SAT"
-                    color: root.textColor
-                    font.pixelSize: 16
-                    font.bold: true
-                }
-
-                Rectangle {
-                    Layout.preferredWidth: 2
-                    Layout.preferredHeight: 28
-                    color: root.borderColor
-                }
-
-                Label {
-                    text: mediaBackend.connected
-                          ? "BT CONNECTED"
-                          : "BT OFFLINE"
-
-                    color: mediaBackend.connected
-                           ? root.accentColor
-                           : root.secondaryTextColor
-
-                    font.pixelSize: 16
-                    font.bold: true
-                }
-
-                Rectangle {
-                    Layout.preferredWidth: 2
-                    Layout.preferredHeight: 28
-                    color: root.borderColor
-                }
-
-                Label {
-                    Layout.fillWidth: true
-
-                    text: root.nowPlayingText()
-
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-
-                    color: root.accentColor
-
-                    font.pixelSize: 16
-                    font.bold: true
-
-                    elide: Text.ElideRight
-                    maximumLineCount: 1
-                }
-
-                Rectangle {
-                    Layout.preferredWidth: 2
-                    Layout.preferredHeight: 28
-                    color: root.borderColor
-                }
-
-                Label {
-                    id: clockLabel
-
-                    text: Qt.formatTime(new Date(), "h:mm AP")
-                    color: root.textColor
-
-                    font.pixelSize: 18
-                    font.bold: true
-                }
-            }
-
-            Timer {
-                interval: 1000
-                running: true
-                repeat: true
-
-                onTriggered: {
-                    clockLabel.text =
-                            Qt.formatTime(new Date(), "h:mm AP")
-                }
-            }
+            bluetoothConnected: mediaBackend.connected
+            mediaTitle: mediaBackend.title
+            mediaArtist: mediaBackend.artist
         }
 
-        StackLayout {
-            id: pageStack
-
+        Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            currentIndex: root.currentPage
+            StackLayout {
+                id: pageStack
 
-            MapsPage {
-                panelColor: root.panelColor
-                borderColor: root.borderColor
+                anchors.fill: parent
+                currentIndex: root.currentPage
+
+                MapsPage {
+                    panelColor: root.panelColor
+                    borderColor: root.borderColor
+                    accentColor: root.accentColor
+                    textColor: root.textColor
+                    secondaryTextColor: root.secondaryTextColor
+                    warningColor: root.warningColor
+                    dangerColor: root.dangerColor
+                    successColor: root.successColor
+                }
+
+                MediaPage {
+                    panelColor: root.panelColor
+                    borderColor: root.borderColor
+                    accentColor: root.accentColor
+                    textColor: root.textColor
+                    secondaryTextColor: root.secondaryTextColor
+                    warningColor: root.warningColor
+                    dangerColor: root.dangerColor
+                    successColor: root.successColor
+                }
+
+                RadioPage {
+                    panelColor: root.panelColor
+                    borderColor: root.borderColor
+                    accentColor: root.accentColor
+                    textColor: root.textColor
+                    secondaryTextColor: root.secondaryTextColor
+                    warningColor: root.warningColor
+                    dangerColor: root.dangerColor
+                    successColor: root.successColor
+                }
+
+                PlaceholderPage {
+                    pageTitle: "ENGINE"
+                    description: "MEFI-4 engine gauges and diagnostics"
+                }
+
+                PlaceholderPage {
+                    pageTitle: "CAMERAS"
+                    description: "Vehicle camera system"
+                }
+
+                PlaceholderPage {
+                    pageTitle: "VEHICLE"
+                    description: "Lights, compressor and PDM controls"
+                }
+
+                PlaceholderPage {
+                    pageTitle: "SETTINGS"
+                    description: "Display and connection settings"
+                }
+            }
+
+            GhostSpeed {
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.bottom: parent.bottom
+                anchors.bottomMargin: 18
+
+                visible: root.currentPage === 0
+
+                speed: root.gpsSpeed
+                textColor: "white"
+            }
+
+            GhostCompass {
+                anchors.top: parent.top
+                anchors.right: parent.right
+
+                anchors.topMargin: 18
+                anchors.rightMargin: 18
+
+                visible: root.currentPage === 0
+
+                heading: root.gpsHeading
                 accentColor: root.accentColor
-                textColor: root.textColor
-                secondaryTextColor: root.secondaryTextColor
-                warningColor: root.warningColor
+                textColor: "white"
+            }
+
+            CriticalAlert {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+
+                z: 1000
+
                 dangerColor: root.dangerColor
-                successColor: root.successColor
-            }
+                warningText: root.visibleWarningText()
 
-            RadioPage {
-                panelColor: root.panelColor
-                borderColor: root.borderColor
-                accentColor: root.accentColor
-                textColor: root.textColor
-                secondaryTextColor: root.secondaryTextColor
-                warningColor: root.warningColor
-                dangerColor: root.dangerColor
-                successColor: root.successColor
-            }
-
-            PlaceholderPage {
-                pageTitle: "ENGINE"
-                description: "MEFI-4 engine gauges and diagnostics"
-            }
-
-            PlaceholderPage {
-                pageTitle: "CAMERAS"
-                description: "Vehicle camera system"
-            }
-
-            PlaceholderPage {
-                pageTitle: "VEHICLE"
-                description: "Lights, compressor and PDM controls"
-            }
-
-            PlaceholderPage {
-                pageTitle: "SETTINGS"
-                description: "Display and connection settings"
+                onAcknowledged: {
+                    root.warningAcknowledged = true
+                }
             }
         }
 
-        Rectangle {
+        BottomNavigation {
             Layout.fillWidth: true
             Layout.preferredHeight: 70
 
-            color: "#0c1117"
+            currentPage: root.currentPage
 
-            border.width: 1
-            border.color: root.borderColor
+            panelColor: "#0c1117"
+            borderColor: root.borderColor
+            accentColor: root.accentColor
+            textColor: root.textColor
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 8
-
-                spacing: 8
-
-                NavButton {
-                    text: "MAPS"
-                    selected: root.currentPage === 0
-                    onClicked: root.changePage(0)
-                }
-
-                NavButton {
-                    text: "MEDIA"
-                    selected: root.currentPage === 1
-                    onClicked: root.changePage(1)
-                }
-
-                NavButton {
-                    text: "ENGINE"
-                    selected: root.currentPage === 2
-                    onClicked: root.changePage(2)
-                }
-
-                NavButton {
-                    text: "CAMERAS"
-                    selected: root.currentPage === 3
-                    onClicked: root.changePage(3)
-                }
-
-                NavButton {
-                    text: "VEHICLE"
-                    selected: root.currentPage === 4
-                    onClicked: root.changePage(4)
-                }
-
-                NavButton {
-                    text: "SETTINGS"
-                    selected: root.currentPage === 5
-                    onClicked: root.changePage(5)
-                }
+            onPageSelected: function(pageNumber) {
+                root.changePage(pageNumber)
             }
+        }
+    }
+
+    Timer {
+        interval: 900
+        running: true
+        repeat: true
+
+        onTriggered: {
+            root.gpsSpeed =
+                    30 + Math.floor(Math.random() * 11)
+
+            root.gpsHeading =
+                    (root.gpsHeading + 3) % 360
+
+            root.engineRpm =
+                    2200 + Math.floor(Math.random() * 600)
+
+            root.coolantTemp =
+                    184 + Math.floor(Math.random() * 8)
+
+            root.oilPressure =
+                    54 + Math.floor(Math.random() * 8)
+
+            root.batteryVoltage =
+                    13.9 + Math.random() * 0.5
         }
     }
 }
