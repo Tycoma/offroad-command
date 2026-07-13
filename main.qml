@@ -320,4 +320,10 @@ ApplicationWindow {
                     13.9 + Math.random() * 0.5
         }
     }
+OnScreenKeyboard {
+    id: onScreenKeyboard
+
+    anchors.left: parent.left
+    anchors.right: parent.right
+}
 }

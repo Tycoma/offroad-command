@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -11,6 +12,11 @@ from backend.navigation_backend import NavigationBackend
 
 
 def main() -> int:
+    os.environ.setdefault(
+	"QT_IM_MODULE",
+	"qtvirtualkeyboard"
+    )
+
     QtWebEngineQuick.initialize()
 
     app = QGuiApplication(sys.argv)
