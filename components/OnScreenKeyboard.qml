@@ -1,26 +1,28 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.VirtualKeyboard
 
 InputPanel {
     id: keyboard
 
-    property int animationDuration: 180
+    parent: Overlay.overlay
 
-    z: 10000
+    z: 100000
 
-    anchors.left: parent.left
-    anchors.right: parent.right
+    width: parent ? parent.width : 0
+    x: 0
 
-    y: active
+    y: active && parent
        ? parent.height - height
-       : parent.height
+       : parent
+         ? parent.height
+         : 0
 
-    visible: y < parent.height
-    active: Qt.inputMethod.visible
+    visible: active || y < (parent ? parent.height : 0)
 
     Behavior on y {
         NumberAnimation {
-            duration: keyboard.animationDuration
+            duration: 180
             easing.type: Easing.OutCubic
         }
     }

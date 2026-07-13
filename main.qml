@@ -235,19 +235,22 @@ ApplicationWindow {
                     }
                 }
             }
+GhostSpeed {
+    z:1
 
-            GhostSpeed {
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 24
+    anchors.left: parent.left
+    anchors.bottom: parent.bottom
 
-                visible: root.currentPage === 0
+    anchors.leftMargin: 18
+    anchors.bottomMargin: 18
 
-                speed: root.gpsSpeed
-                textColor: "white"
-                accentColor: root.accentColor
-            }
+    visible: root.currentPage === 0
 
+    speed: root.gpsSpeed
+    textColor: "white"
+    accentColor: root.accentColor
+}
+ 
             GhostCompass {
                 anchors.top: parent.top
                 anchors.right: parent.right

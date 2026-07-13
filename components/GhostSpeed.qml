@@ -8,19 +8,19 @@ Rectangle {
     property color textColor: "white"
     property color accentColor: "#2da8ff"
 
-    width: 190
-    height: 118
+    width: 170
+    height: 112
     radius: 18
 
-    color: "#b30b1016"
-    opacity: 0.92
+    color: "#990b1016"
+    opacity: 0.82
 
-    border.width: 2
-    border.color: "#99ffffff"
+    border.width: 1
+    border.color: "#88ffffff"
 
     Column {
         anchors.centerIn: parent
-        spacing: -4
+        spacing: -5
 
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
@@ -28,7 +28,7 @@ Rectangle {
             text: speedDisplay.speed
             color: speedDisplay.textColor
 
-            font.pixelSize: 72
+            font.pixelSize: 70
             font.bold: true
         }
 
@@ -38,7 +38,7 @@ Rectangle {
             text: "MPH"
             color: speedDisplay.accentColor
 
-            font.pixelSize: 20
+            font.pixelSize: 18
             font.bold: true
         }
     }
