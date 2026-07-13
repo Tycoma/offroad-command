@@ -1,3 +1,4 @@
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -198,6 +199,20 @@ Item {
                 }
             }
 
+            Button {
+                width: 64
+                height: 58
+
+                text: "MENU"
+
+                font.pixelSize: 11
+                font.bold: true
+
+                onClicked: {
+                    page.showTools()
+                    navigationDrawer.open()
+                }
+            }
         }
 
         Button {
@@ -457,6 +472,20 @@ Item {
                 Layout.preferredHeight: 58
 
                 text: "FAVORITES"
+            }
+
+            Button {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 58
+
+                text: "IMPORT GPX"
+            }
+
+            Button {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 58
+
+                text: "EXPORT GPX"
             }
 
             Item {
