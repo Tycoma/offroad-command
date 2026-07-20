@@ -1,17 +1,18 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "Theme.js" as Theme
 
 Rectangle {
     id: header
 
-    property color panelColor: "#0c1117"
-    property color borderColor: "#2a3947"
-    property color accentColor: "#2da8ff"
-    property color textColor: "#f4f7fa"
-    property color secondaryTextColor: "#8fa1b2"
-    property color successColor: "#55d889"
-    property color warningColor: "#ffb347"
+    property color panelColor: Theme.panel
+    property color borderColor: Theme.border
+    property color accentColor: Theme.accent
+    property color textColor: Theme.text
+    property color secondaryTextColor: Theme.textSecondary
+    property color successColor: theme.sucess
+    property color warningColor: theme.warning
 
     property int radioChannel: 4
     property string radioChannelName: ""
