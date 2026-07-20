@@ -12,7 +12,7 @@ Rectangle {
     property color secondaryTextColor: "#8fa1b2"
 
     property int radioChannel: 4
-    property int gpsSatellites: 12
+    property int gpsSatellites: 0
 
     property bool bluetoothConnected: false
     property string mediaTitle: ""

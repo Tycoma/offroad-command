@@ -31,14 +31,14 @@ ApplicationWindow {
 
     property int radioChannel: 4
 
-    property int gpsSpeed: 34
-    property int gpsHeading: 127
-    property int gpsSatellites: 12
+    property int gpsSpeed: 0
+    property int gpsHeading: 0
+    property int gpsSatellites: 0
 
-    property int engineRpm: 2450
-    property int coolantTemp: 188
-    property int oilPressure: 58
-    property real batteryVoltage: 14.2
+    property int engineRpm: 0
+    property int coolantTemp: 0
+    property int oilPressure: 0
+    property real batteryVoltage: 0.0
 
     property int maxCoolantTemp: 230
     property int minOilPressure: 15
@@ -273,7 +273,9 @@ GhostSpeed {
                 z: 1000
 
                 dangerColor: root.dangerColor
-                warningText: root.visibleWarningText()
+                // Disabled until live MEFI/CAN engine data is connected.
+                warningText: ""
+                visible: false
 
                 onAcknowledged: {
                     root.warningAcknowledged = true
@@ -295,32 +297,6 @@ GhostSpeed {
             onPageSelected: function(pageNumber) {
                 root.changePage(pageNumber)
             }
-        }
-    }
-
-    Timer {
-        interval: 900
-        running: true
-        repeat: true
-
-        onTriggered: {
-            root.gpsSpeed =
-                    30 + Math.floor(Math.random() * 11)
-
-            root.gpsHeading =
-                    (root.gpsHeading + 3) % 360
-
-            root.engineRpm =
-                    2200 + Math.floor(Math.random() * 600)
-
-            root.coolantTemp =
-                    184 + Math.floor(Math.random() * 8)
-
-            root.oilPressure =
-                    54 + Math.floor(Math.random() * 8)
-
-            root.batteryVoltage =
-                    13.9 + Math.random() * 0.5
         }
     }
 OnScreenKeyboard {
