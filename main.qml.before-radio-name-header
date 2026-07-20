@@ -30,8 +30,6 @@ ApplicationWindow {
     readonly property color successColor: "#55d889"
 
     property int radioChannel: 4
-    property string radioChannelName: "CHASE"
-    property string radioFrequency: ""
 
     property int gpsSpeed: gpsBackend.speedMph
     property int gpsHeading: gpsBackend.heading
@@ -126,8 +124,6 @@ ApplicationWindow {
             secondaryTextColor: root.secondaryTextColor
 
             radioChannel: root.radioChannel
-            radioChannelName: root.radioChannelName
-            radioFrequency: root.radioFrequency
             gpsSatellites: root.gpsSatellites
 
             bluetoothConnected: mediaBackend.connected

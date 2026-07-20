@@ -14,8 +14,6 @@ Rectangle {
     property color warningColor: "#ffb347"
 
     property int radioChannel: 4
-    property string radioChannelName: ""
-    property string radioFrequency: ""
     property int gpsSatellites: 0
 
     property bool bluetoothConnected: false
@@ -28,19 +26,6 @@ Rectangle {
     property string mediaArtist: ""
 
     color: panelColor
-
-    function radioDisplayText() {
-        var channelName = radioChannelName.trim()
-        var frequency = radioFrequency.trim()
-
-        if (channelName !== "")
-            return channelName.toUpperCase()
-
-        if (frequency !== "")
-            return frequency.replace(/MHz/ig, "").trim()
-
-        return "CH " + radioChannel
-    }
 
     function nowPlayingText() {
         var title = mediaTitle.trim()
@@ -76,32 +61,65 @@ Rectangle {
         spacing: 6
 
         /*
-         * GPS status
+         * GPS icon and satellite count
          */
-        Item {
-            Layout.preferredWidth: 78
+        Rectangle {
+            Layout.preferredWidth: 74
             Layout.preferredHeight: 38
+            radius: 0
+            color: "transparent"
+            border.width: 0
+            border.color: header.gpsSatellites > 0
+                          ? header.successColor
+                          : header.borderColor
 
             Row {
                 anchors.centerIn: parent
-                spacing: 7
+                spacing: 8
+
+                Canvas {
+                    width: 24
+                    height: 24
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.reset()
+
+                        var c = header.gpsSatellites > 0
+                                ? header.successColor
+                                : header.secondaryTextColor
+
+                        ctx.strokeStyle = c
+                        ctx.fillStyle = c
+                        ctx.lineWidth = 2
+
+                        ctx.beginPath()
+                        ctx.arc(12, 12, 3, 0, Math.PI * 2)
+                        ctx.fill()
+
+                        ctx.beginPath()
+                        ctx.arc(12, 12, 7, -0.8, 0.8)
+                        ctx.stroke()
+
+                        ctx.beginPath()
+                        ctx.arc(12, 12, 11, -0.8, 0.8)
+                        ctx.stroke()
+
+                        ctx.beginPath()
+                        ctx.moveTo(4, 19)
+                        ctx.lineTo(10, 13)
+                        ctx.stroke()
+                    }
+                }
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: "GPS"
+                    text: header.gpsSatellites
                     font.pixelSize: 17
                     font.bold: true
-                    color: header.textColor
-                }
-
-                Rectangle {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 11
-                    height: 11
-                    radius: width / 2
-
                     color: header.gpsSatellites > 0
-                           ? header.successColor
+                           ? header.textColor
                            : header.secondaryTextColor
                 }
             }
@@ -159,24 +177,64 @@ Rectangle {
         }
 
         /*
-         * Radio channel name or frequency
+         * Radio icon and channel
          */
-        Item {
-            Layout.preferredWidth: 94
+        Rectangle {
+            Layout.preferredWidth: 82
             Layout.preferredHeight: 38
+            radius: 0
+            color: "transparent"
+            border.width: 0
+            border.color: header.transmitting
+                          ? header.warningColor
+                          : header.borderColor
 
-            Text {
+            Row {
                 anchors.centerIn: parent
-                width: parent.width
-                text: header.radioDisplayText()
-                elide: Text.ElideRight
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                font.pixelSize: 15
-                font.bold: true
-                color: header.transmitting
-                       ? header.warningColor
-                       : header.textColor
+                spacing: 8
+
+                Canvas {
+                    width: 25
+                    height: 25
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.reset()
+
+                        var c = header.transmitting
+                                ? header.warningColor
+                                : header.textColor
+
+                        ctx.strokeStyle = c
+                        ctx.fillStyle = c
+                        ctx.lineWidth = 2
+
+                        ctx.strokeRect(3, 8, 19, 14)
+
+                        ctx.beginPath()
+                        ctx.moveTo(7, 8)
+                        ctx.lineTo(18, 3)
+                        ctx.stroke()
+
+                        ctx.beginPath()
+                        ctx.arc(8, 15, 2.5, 0, Math.PI * 2)
+                        ctx.stroke()
+
+                        ctx.fillRect(14, 12, 5, 2)
+                        ctx.fillRect(14, 16, 5, 2)
+                    }
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: header.radioChannel
+                    font.pixelSize: 17
+                    font.bold: true
+                    color: header.transmitting
+                           ? header.warningColor
+                           : header.textColor
+                }
             }
         }
 

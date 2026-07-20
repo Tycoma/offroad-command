@@ -1418,4 +1418,46 @@ Item {
             color: page.secondaryTextColor
         }
     }
+
+    Rectangle {
+        z: 50
+
+        anchors.top: parent.top
+        anchors.right: parent.right
+
+        anchors.topMargin: 20
+        anchors.rightMargin: 20
+
+        width: 190
+        height: 82
+        radius: 10
+
+        color: "#141b23"
+        border.width: 1
+        border.color: "#2a3947"
+
+        Column {
+            anchors.centerIn: parent
+            spacing: 5
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: "GPS SATELLITES"
+                color: "#8fa1b2"
+                font.pixelSize: 12
+                font.bold: true
+            }
+
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: gpsBackend.satellites
+                color: gpsBackend.satellites > 0
+                       ? "#55d889"
+                       : "#8fa1b2"
+                font.pixelSize: 28
+                font.bold: true
+            }
+        }
+    }
+
 }

@@ -68,7 +68,7 @@
     <script src="leaflet.js"></script>
 
     <script>
-        const startingPosition = [33.432472564, -111.608407937];
+        const startingPosition = [33.4484, -112.0740];
 
         const map = L.map("map", {
             zoomControl: false,
@@ -115,7 +115,9 @@
             }
         ).addTo(map);
 
-        const simulatedTrack = [];
+        const simulatedTrack = [
+            [33.4484, -112.0740]
+        ];
 
         const trackLine = L.polyline(
             simulatedTrack,
@@ -128,10 +130,24 @@
 
         let latitude = startingPosition[0];
         let longitude = startingPosition[1];
+        let simulationRunning = true;
 
-        // Simulated movement removed.
-        // Live GPS will update the marker.
+        function updateVehicle() {
+            if (!simulationRunning) {
+                return;
+            }
 
+            latitude += 0.00004;
+            longitude += 0.000025;
+
+            const position = [latitude, longitude];
+
+            vehicleMarker.setLatLng(position);
+            simulatedTrack.push(position);
+            trackLine.setLatLngs(simulatedTrack);
+        }
+
+        window.setInterval(updateVehicle, 750);
 
         map.on("contextmenu", function(event) {
             const marker = L.marker(

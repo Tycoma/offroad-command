@@ -99,13 +99,9 @@ Item {
         }
 
         MapControls {
-            id: mapControls
-
             anchors.left: parent.left
-            anchors.top: parent.top
-
+            anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: 14
-            anchors.topMargin: 118
 
             toolsVisible: page.toolsVisible
 
@@ -121,14 +117,14 @@ Item {
         }
 
         Button {
-            anchors.left: parent.left
-            anchors.top: mapControls.bottom
+            anchors.right: parent.right
+            anchors.bottom: bottomToolbar.top
 
-            anchors.leftMargin: 14
-            anchors.topMargin: 8
+            anchors.rightMargin: 18
+            anchors.bottomMargin: 14
 
             width: 82
-            height: 58
+            height: 62
 
             visible: page.toolsVisible
             opacity: page.toolsVisible ? 1 : 0
@@ -328,7 +324,6 @@ Item {
 
     NavigationDrawer {
         id: navigationDrawer
-        z: 500
 
         width: Math.min(390, page.width * 0.42)
         height: page.height
@@ -343,7 +338,6 @@ Item {
 
     WaypointPopup {
         id: waypointPopup
-        z: 500
 
         mapViewRef: mapView
 
@@ -359,7 +353,6 @@ Item {
 
     LayersPopup {
         id: layersPopup
-        z: 500
 
         anchors.centerIn: parent
 
@@ -372,7 +365,6 @@ Item {
 
     GotoPopup {
         id: gotoPopup
-        z: 500
 
         anchors.centerIn: parent
 

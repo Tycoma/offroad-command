@@ -36,8 +36,12 @@ Rectangle {
         if (channelName !== "")
             return channelName.toUpperCase()
 
-        if (frequency !== "")
-            return frequency.replace(/MHz/ig, "").trim()
+        if (frequency !== "") {
+            if (frequency.toUpperCase().indexOf("MHZ") >= 0)
+                return frequency.toUpperCase()
+
+            return frequency + " MHz"
+        }
 
         return "CH " + radioChannel
     }
@@ -76,32 +80,65 @@ Rectangle {
         spacing: 6
 
         /*
-         * GPS status
+         * GPS icon and satellite count
          */
-        Item {
-            Layout.preferredWidth: 78
+        Rectangle {
+            Layout.preferredWidth: 74
             Layout.preferredHeight: 38
+            radius: 0
+            color: "transparent"
+            border.width: 0
+            border.color: header.gpsSatellites > 0
+                          ? header.successColor
+                          : header.borderColor
 
             Row {
                 anchors.centerIn: parent
-                spacing: 7
+                spacing: 8
+
+                Canvas {
+                    width: 24
+                    height: 24
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.reset()
+
+                        var c = header.gpsSatellites > 0
+                                ? header.successColor
+                                : header.secondaryTextColor
+
+                        ctx.strokeStyle = c
+                        ctx.fillStyle = c
+                        ctx.lineWidth = 2
+
+                        ctx.beginPath()
+                        ctx.arc(12, 12, 3, 0, Math.PI * 2)
+                        ctx.fill()
+
+                        ctx.beginPath()
+                        ctx.arc(12, 12, 7, -0.8, 0.8)
+                        ctx.stroke()
+
+                        ctx.beginPath()
+                        ctx.arc(12, 12, 11, -0.8, 0.8)
+                        ctx.stroke()
+
+                        ctx.beginPath()
+                        ctx.moveTo(4, 19)
+                        ctx.lineTo(10, 13)
+                        ctx.stroke()
+                    }
+                }
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: "GPS"
+                    text: header.gpsSatellites
                     font.pixelSize: 17
                     font.bold: true
-                    color: header.textColor
-                }
-
-                Rectangle {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: 11
-                    height: 11
-                    radius: width / 2
-
                     color: header.gpsSatellites > 0
-                           ? header.successColor
+                           ? header.textColor
                            : header.secondaryTextColor
                 }
             }
@@ -162,7 +199,7 @@ Rectangle {
          * Radio channel name or frequency
          */
         Item {
-            Layout.preferredWidth: 94
+            Layout.preferredWidth: 112
             Layout.preferredHeight: 38
 
             Text {

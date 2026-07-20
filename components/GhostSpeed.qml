@@ -2,43 +2,36 @@ import QtQuick
 import QtQuick.Controls
 
 Rectangle {
-    id: speedDisplay
+    id: root
 
     property int speed: 0
     property color textColor: "white"
-    property color accentColor: "#2da8ff"
+    property color secondaryTextColor: "#7590a8"
 
-    width: 170
-    height: 112
-    radius: 18
+    width: 92
+    height: 82
+    radius: 12
 
-    color: "#990b1016"
-    opacity: 0.82
-
-    border.width: 1
-    border.color: "#88ffffff"
+    color: "#e6080d12"
+    border.width: 0
 
     Column {
         anchors.centerIn: parent
-        spacing: -5
+        spacing: -3
 
-        Label {
+        Text {
             anchors.horizontalCenter: parent.horizontalCenter
-
-            text: speedDisplay.speed
-            color: speedDisplay.textColor
-
-            font.pixelSize: 70
+            text: root.speed
+            color: root.textColor
+            font.pixelSize: 44
             font.bold: true
         }
 
-        Label {
+        Text {
             anchors.horizontalCenter: parent.horizontalCenter
-
-            text: "MPH"
-            color: speedDisplay.accentColor
-
-            font.pixelSize: 18
+            text: "(GPS)"
+            color: root.secondaryTextColor
+            font.pixelSize: 13
             font.bold: true
         }
     }

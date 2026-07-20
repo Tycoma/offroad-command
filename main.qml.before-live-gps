@@ -30,12 +30,10 @@ ApplicationWindow {
     readonly property color successColor: "#55d889"
 
     property int radioChannel: 4
-    property string radioChannelName: "CHASE"
-    property string radioFrequency: ""
 
-    property int gpsSpeed: gpsBackend.speedMph
-    property int gpsHeading: gpsBackend.heading
-    property int gpsSatellites: gpsBackend.satellites
+    property int gpsSpeed: 0
+    property int gpsHeading: 0
+    property int gpsSatellites: 0
 
     property int engineRpm: 0
     property int coolantTemp: 0
@@ -117,7 +115,7 @@ ApplicationWindow {
 
         AppHeader {
             Layout.fillWidth: true
-            Layout.preferredHeight: 46
+            Layout.preferredHeight: 62
 
             panelColor: "#0c1117"
             borderColor: root.borderColor
@@ -126,8 +124,6 @@ ApplicationWindow {
             secondaryTextColor: root.secondaryTextColor
 
             radioChannel: root.radioChannel
-            radioChannelName: root.radioChannelName
-            radioFrequency: root.radioFrequency
             gpsSatellites: root.gpsSatellites
 
             bluetoothConnected: mediaBackend.connected

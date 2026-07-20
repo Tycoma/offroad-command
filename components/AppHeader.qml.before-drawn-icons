@@ -1,0 +1,297 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+Rectangle {
+    id: header
+
+    property color panelColor: "#0c1117"
+    property color borderColor: "#2a3947"
+    property color accentColor: "#2da8ff"
+    property color textColor: "#f4f7fa"
+    property color secondaryTextColor: "#8fa1b2"
+    property color successColor: "#55d889"
+    property color warningColor: "#ffb347"
+
+    property int radioChannel: 4
+    property int gpsSatellites: 0
+
+    property bool bluetoothConnected: false
+    property bool radioConnected: false
+    property bool canConnected: false
+    property bool transmitting: false
+    property bool warningActive: false
+
+    property string mediaTitle: ""
+    property string mediaArtist: ""
+
+    color: panelColor
+
+    function nowPlayingText() {
+        var title = mediaTitle.trim()
+        var artist = mediaArtist.trim()
+
+        if (title === ""
+                || title === "Bluetooth Audio"
+                || title === "No media") {
+            return ""
+        }
+
+        if (artist === ""
+                || artist === "Connected phone"
+                || artist === "Unknown Artist") {
+            return title
+        }
+
+        return artist + "  •  " + title
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 1
+        color: header.borderColor
+    }
+
+    RowLayout {
+        anchors.fill: parent
+        anchors.leftMargin: 18
+        anchors.rightMargin: 18
+        spacing: 12
+
+        /*
+         * GPS status
+         */
+        Rectangle {
+            Layout.preferredWidth: gpsRow.implicitWidth + 20
+            Layout.preferredHeight: 38
+            radius: 8
+            color: "#111923"
+            border.width: 1
+            border.color: header.gpsSatellites > 0
+                          ? header.successColor
+                          : header.borderColor
+
+            Row {
+                id: gpsRow
+                anchors.centerIn: parent
+                spacing: 7
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "🛰"
+                    font.pixelSize: 21
+                    color: header.gpsSatellites > 0
+                           ? header.successColor
+                           : header.secondaryTextColor
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: header.gpsSatellites
+                    font.pixelSize: 17
+                    font.bold: true
+                    color: header.gpsSatellites > 0
+                           ? header.textColor
+                           : header.secondaryTextColor
+                }
+            }
+        }
+
+        /*
+         * Bluetooth status
+         */
+        Rectangle {
+            Layout.preferredWidth: 46
+            Layout.preferredHeight: 38
+            radius: 8
+            color: "#111923"
+            border.width: 1
+            border.color: header.bluetoothConnected
+                          ? header.accentColor
+                          : header.borderColor
+
+            Text {
+                anchors.centerIn: parent
+                text: "ᛒ"
+                font.pixelSize: 24
+                font.bold: true
+                color: header.bluetoothConnected
+                       ? header.accentColor
+                       : header.secondaryTextColor
+            }
+        }
+
+        /*
+         * VHF radio status
+         */
+        Rectangle {
+            Layout.preferredWidth: radioRow.implicitWidth + 20
+            Layout.preferredHeight: 38
+            radius: 8
+            color: "#111923"
+            border.width: 1
+            border.color: header.transmitting
+                          ? header.warningColor
+                          : header.borderColor
+
+            Row {
+                id: radioRow
+                anchors.centerIn: parent
+                spacing: 7
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: header.transmitting ? "🎤" : "📻"
+                    font.pixelSize: 20
+                    color: header.transmitting
+                           ? header.warningColor
+                           : header.textColor
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: header.radioChannel
+                    font.pixelSize: 17
+                    font.bold: true
+                    color: header.transmitting
+                           ? header.warningColor
+                           : header.textColor
+                }
+            }
+        }
+
+        /*
+         * CAN status placeholder
+         */
+        Rectangle {
+            Layout.preferredWidth: 46
+            Layout.preferredHeight: 38
+            radius: 8
+            color: "#111923"
+            border.width: 1
+            border.color: header.canConnected
+                          ? header.successColor
+                          : header.borderColor
+
+            Text {
+                anchors.centerIn: parent
+                text: "⌁"
+                font.pixelSize: 27
+                font.bold: true
+                color: header.canConnected
+                       ? header.successColor
+                       : header.secondaryTextColor
+            }
+        }
+
+        /*
+         * Warning indicator
+         */
+        Rectangle {
+            Layout.preferredWidth: 46
+            Layout.preferredHeight: 38
+            radius: 8
+            color: header.warningActive
+                   ? "#3a2610"
+                   : "#111923"
+            border.width: 1
+            border.color: header.warningActive
+                          ? header.warningColor
+                          : header.borderColor
+
+            visible: header.warningActive
+
+            Text {
+                anchors.centerIn: parent
+                text: "⚠"
+                font.pixelSize: 23
+                font.bold: true
+                color: header.warningColor
+            }
+        }
+
+        /*
+         * Media information
+         */
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            Row {
+                anchors.centerIn: parent
+                width: Math.min(implicitWidth, parent.width - 20)
+                spacing: 9
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "♪"
+                    font.pixelSize: 22
+                    font.bold: true
+                    color: header.bluetoothConnected
+                           ? header.accentColor
+                           : header.secondaryTextColor
+                    visible: header.nowPlayingText() !== ""
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Math.min(implicitWidth, 520)
+                    text: header.nowPlayingText()
+                    elide: Text.ElideRight
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 16
+                    font.bold: true
+                    color: header.textColor
+                    visible: text !== ""
+                }
+            }
+        }
+
+        /*
+         * Clock
+         */
+        Rectangle {
+            Layout.preferredWidth: clockRow.implicitWidth + 22
+            Layout.preferredHeight: 38
+            radius: 8
+            color: "#111923"
+            border.width: 1
+            border.color: header.borderColor
+
+            Row {
+                id: clockRow
+                anchors.centerIn: parent
+                spacing: 7
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "◷"
+                    font.pixelSize: 21
+                    color: header.secondaryTextColor
+                }
+
+                Text {
+                    id: clockLabel
+                    anchors.verticalCenter: parent.verticalCenter
+                    font.pixelSize: 17
+                    font.bold: true
+                    color: header.textColor
+                }
+            }
+        }
+    }
+
+    Timer {
+        interval: 1000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+
+        onTriggered: {
+            clockLabel.text =
+                Qt.formatDateTime(new Date(), "h:mm AP")
+        }
+    }
+}
