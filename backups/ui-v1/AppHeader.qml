@@ -1,0 +1,369 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+
+Rectangle {
+    id: header
+
+    property color panelColor: "#0c1117"
+    property color borderColor: "#2a3947"
+    property color accentColor: "#2da8ff"
+    property color textColor: "#f4f7fa"
+    property color secondaryTextColor: "#8fa1b2"
+    property color successColor: "#55d889"
+    property color warningColor: "#ffb347"
+
+    property int radioChannel: 4
+    property string radioChannelName: ""
+    property string radioFrequency: ""
+    property int gpsSatellites: 0
+
+    property bool bluetoothConnected: false
+    property bool radioConnected: false
+    property bool canConnected: false
+    property bool transmitting: false
+    property bool warningActive: false
+
+    property string mediaTitle: ""
+    property string mediaArtist: ""
+
+    color: panelColor
+
+    function radioDisplayText() {
+        var channelName = radioChannelName.trim()
+        var frequency = radioFrequency.trim()
+
+        if (channelName !== "")
+            return channelName.toUpperCase()
+
+        if (frequency !== "")
+            return frequency.replace(/MHz/ig, "").trim()
+
+        return "CH " + radioChannel
+    }
+
+    function nowPlayingText() {
+        var title = mediaTitle.trim()
+        var artist = mediaArtist.trim()
+
+        if (title === ""
+                || title === "Bluetooth Audio"
+                || title === "No media") {
+            return ""
+        }
+
+        if (artist === ""
+                || artist === "Connected phone"
+                || artist === "Unknown Artist") {
+            return title
+        }
+
+        return artist + "  -  " + title
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 1
+        color: header.borderColor
+    }
+
+    RowLayout {
+        anchors.fill: parent
+        anchors.leftMargin: 10
+        anchors.rightMargin: 10
+        spacing: 6
+
+        /*
+         * GPS status
+         */
+        Item {
+            Layout.preferredWidth: 78
+            Layout.preferredHeight: 38
+
+            Row {
+                anchors.centerIn: parent
+                spacing: 7
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "GPS"
+                    font.pixelSize: 17
+                    font.bold: true
+                    color: header.textColor
+                }
+
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 11
+                    height: 11
+                    radius: width / 2
+
+                    color: header.gpsSatellites > 0
+                           ? header.successColor
+                           : header.secondaryTextColor
+                }
+            }
+        }
+
+        /*
+         * Bluetooth icon
+         */
+        Rectangle {
+            Layout.preferredWidth: 34
+            Layout.preferredHeight: 38
+            radius: 0
+            color: "transparent"
+            border.width: 0
+            border.color: header.bluetoothConnected
+                          ? header.accentColor
+                          : header.borderColor
+
+            Canvas {
+                anchors.centerIn: parent
+                width: 22
+                height: 28
+
+                onPaint: {
+                    var ctx = getContext("2d")
+                    ctx.reset()
+
+                    ctx.strokeStyle = header.bluetoothConnected
+                                      ? header.accentColor
+                                      : header.secondaryTextColor
+                    ctx.lineWidth = 2.4
+                    ctx.lineCap = "round"
+                    ctx.lineJoin = "round"
+
+                    ctx.beginPath()
+                    ctx.moveTo(10, 2)
+                    ctx.lineTo(18, 9)
+                    ctx.lineTo(10, 14)
+                    ctx.lineTo(18, 20)
+                    ctx.lineTo(10, 26)
+                    ctx.lineTo(10, 2)
+                    ctx.stroke()
+
+                    ctx.beginPath()
+                    ctx.moveTo(3, 7)
+                    ctx.lineTo(15, 21)
+                    ctx.stroke()
+
+                    ctx.beginPath()
+                    ctx.moveTo(3, 21)
+                    ctx.lineTo(15, 7)
+                    ctx.stroke()
+                }
+            }
+        }
+
+        /*
+         * Radio channel name or frequency
+         */
+        Item {
+            Layout.preferredWidth: 94
+            Layout.preferredHeight: 38
+
+            Text {
+                anchors.centerIn: parent
+                width: parent.width
+                text: header.radioDisplayText()
+                elide: Text.ElideRight
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                font.pixelSize: 15
+                font.bold: true
+                color: header.transmitting
+                       ? header.warningColor
+                       : header.textColor
+            }
+        }
+
+        /*
+         * CAN bus icon
+         */
+        Rectangle {
+            Layout.preferredWidth: 46
+            Layout.preferredHeight: 38
+            radius: 0
+            color: "transparent"
+            border.width: 0
+            border.color: header.canConnected
+                          ? header.successColor
+                          : header.borderColor
+
+            Canvas {
+                anchors.centerIn: parent
+                width: 26
+                height: 22
+
+                onPaint: {
+                    var ctx = getContext("2d")
+                    ctx.reset()
+
+                    var c = header.canConnected
+                            ? header.successColor
+                            : header.secondaryTextColor
+
+                    ctx.strokeStyle = c
+                    ctx.fillStyle = c
+                    ctx.lineWidth = 2
+
+                    ctx.beginPath()
+                    ctx.moveTo(3, 6)
+                    ctx.lineTo(23, 6)
+                    ctx.stroke()
+
+                    ctx.beginPath()
+                    ctx.moveTo(3, 16)
+                    ctx.lineTo(23, 16)
+                    ctx.stroke()
+
+                    ctx.beginPath()
+                    ctx.arc(7, 6, 2.5, 0, Math.PI * 2)
+                    ctx.fill()
+
+                    ctx.beginPath()
+                    ctx.arc(19, 16, 2.5, 0, Math.PI * 2)
+                    ctx.fill()
+                }
+            }
+        }
+
+        /*
+         * Warning icon
+         */
+        Rectangle {
+            Layout.preferredWidth: 46
+            Layout.preferredHeight: 38
+            radius: 0
+            visible: header.warningActive
+            color: "#3a2610"
+            border.width: 0
+            border.color: header.warningColor
+
+            Canvas {
+                anchors.centerIn: parent
+                width: 26
+                height: 26
+
+                onPaint: {
+                    var ctx = getContext("2d")
+                    ctx.reset()
+
+                    ctx.strokeStyle = header.warningColor
+                    ctx.fillStyle = header.warningColor
+                    ctx.lineWidth = 2
+
+                    ctx.beginPath()
+                    ctx.moveTo(13, 2)
+                    ctx.lineTo(24, 23)
+                    ctx.lineTo(2, 23)
+                    ctx.closePath()
+                    ctx.stroke()
+
+                    ctx.fillRect(12, 8, 2, 8)
+
+                    ctx.beginPath()
+                    ctx.arc(13, 19, 1.5, 0, Math.PI * 2)
+                    ctx.fill()
+                }
+            }
+        }
+
+        /*
+         * Media
+         */
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            Row {
+                anchors.centerIn: parent
+                spacing: 9
+
+                Canvas {
+                    width: 23
+                    height: 25
+                    anchors.verticalCenter: parent.verticalCenter
+                    visible: header.nowPlayingText() !== ""
+
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.reset()
+
+                        ctx.strokeStyle = header.bluetoothConnected
+                                          ? header.accentColor
+                                          : header.secondaryTextColor
+                        ctx.fillStyle = ctx.strokeStyle
+                        ctx.lineWidth = 2.2
+
+                        ctx.beginPath()
+                        ctx.moveTo(10, 4)
+                        ctx.lineTo(19, 2)
+                        ctx.lineTo(19, 16)
+                        ctx.stroke()
+
+                        ctx.beginPath()
+                        ctx.arc(7, 19, 4, 0, Math.PI * 2)
+                        ctx.fill()
+
+                        ctx.beginPath()
+                        ctx.arc(16, 16, 4, 0, Math.PI * 2)
+                        ctx.fill()
+                    }
+                }
+
+                Text {
+                    width: Math.min(implicitWidth, 360)
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: header.nowPlayingText()
+                    visible: text !== ""
+                    elide: Text.ElideRight
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 14
+                    font.bold: true
+                    color: header.textColor
+                }
+            }
+        }
+
+        /*
+         * Clock
+         */
+        Rectangle {
+            Layout.preferredWidth: 64
+            Layout.preferredHeight: 38
+            radius: 0
+            color: "transparent"
+            border.width: 0
+            border.color: header.borderColor
+
+            Row {
+                anchors.centerIn: parent
+                spacing: 8
+
+                Text {
+                    id: clockLabel
+                    anchors.verticalCenter: parent.verticalCenter
+                    font.pixelSize: 17
+                    font.bold: true
+                    color: header.textColor
+                }
+            }
+        }
+    }
+
+    Timer {
+        interval: 1000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+
+        onTriggered: {
+            clockLabel.text =
+                Qt.formatDateTime(new Date(), "HH:mm")
+        }
+    }
+}
