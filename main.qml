@@ -117,7 +117,7 @@ ApplicationWindow {
 
         AppHeader {
             Layout.fillWidth: true
-            Layout.preferredHeight: 56
+            Layout.preferredHeight: 72
 
             panelColor: "#000000"
             borderColor: root.borderColor
@@ -133,6 +133,9 @@ ApplicationWindow {
             bluetoothConnected: mediaBackend.connected
             mediaTitle: mediaBackend.title
             mediaArtist: mediaBackend.artist
+
+	    radioConnected: true
+	    transmitting: false
         }
 
         Item {
@@ -146,6 +149,8 @@ ApplicationWindow {
                 currentIndex: root.currentPage
 
                 MapsPage {
+		    id:mapsPage
+
                     panelColor: root.panelColor
                     borderColor: root.borderColor
                     accentColor: root.accentColor
@@ -245,27 +250,27 @@ GhostSpeed {
     anchors.left: parent.left
     anchors.bottom: parent.bottom
 
-    anchors.leftMargin: 18
-    anchors.bottomMargin: 18
+    anchors.leftMargin: 20
+    anchors.bottomMargin: 16
 
     visible: root.currentPage === 0
+	&& !mapsPage.toolsVisible
 
     speed: root.gpsSpeed
     textColor: "white"
-    accentColor: root.accentColor
 }
  
             GhostCompass {
                 anchors.top: parent.top
                 anchors.right: parent.right
 
-                anchors.topMargin: 18
-                anchors.rightMargin: 18
+                anchors.topMargin: 16
+                anchors.rightMargin: 20
 
                 visible: root.currentPage === 0
+		    && !mapsPage.toolsVisible
 
                 heading: root.gpsHeading
-                accentColor: root.accentColor
                 textColor: "white"
             }
 

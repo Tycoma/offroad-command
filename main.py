@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QUrl
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication, QFontDatabase
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWebEngineQuick import QtWebEngineQuick
 
@@ -21,9 +21,36 @@ def main() -> int:
 
     QtWebEngineQuick.initialize()
 
+    #
+    # Create application
+    #
     app = QGuiApplication(sys.argv)
     app.setApplicationName("Off-Road Command")
 
+    #
+    # Register Material Symbols Rounded
+    #
+    font_path = (
+        Path(__file__).resolve().parent
+        / "assets"
+        / "fonts"
+        / "MaterialSymbolsRounded.ttf"
+    )
+
+    fontId = QFontDatabase.addApplicationFont(str(font_path))
+
+    if fontId == -1:
+        print("ERROR: Failed to load Material Symbols font.")
+        print("Expected at:", font_path)
+    else:
+        print(
+            "Loaded font:",
+            QFontDatabase.applicationFontFamilies(fontId)
+        )
+
+    #
+    # Create QML engine
+    #
     engine = QQmlApplicationEngine()
 
     #
@@ -66,7 +93,7 @@ def main() -> int:
     )
 
     #
-    # Load QML
+    # Load main QML
     #
     qml_file = Path(__file__).resolve().parent / "main.qml"
     engine.load(QUrl.fromLocalFile(str(qml_file)))

@@ -5,6 +5,9 @@ Column {
     id: controls
 
     property bool toolsVisible: false
+    property color accentColor: "#168fe8"
+    property color textColor: "#ffffff"
+    property color borderColor: "#66717a"
 
     signal zoomInRequested()
     signal zoomOutRequested()
@@ -19,22 +22,50 @@ Column {
         }
     }
 
-    Button {
-        width: 64
-        height: 58
+    component MapControlButton: Rectangle {
+        id: controlButton
 
-        text: "+"
-        font.pixelSize: 26
+        property string symbol: ""
+        signal clicked()
+
+        width: 62
+        height: 58
+        radius: 7
+
+        color: mouseArea.pressed
+               ? "#ff182028"
+               : "#ed000000"
+
+        border.width: 1
+        border.color: controls.borderColor
+
+        Text {
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: -2
+
+            text: controlButton.symbol
+            color: controls.textColor
+
+            font.pixelSize: 34
+            font.weight: Font.Light
+        }
+
+        MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+
+            onClicked: controlButton.clicked()
+        }
+    }
+
+    MapControlButton {
+        symbol: "+"
 
         onClicked: controls.zoomInRequested()
     }
 
-    Button {
-        width: 64
-        height: 58
-
-        text: "-"
-        font.pixelSize: 26
+    MapControlButton {
+        symbol: "\u2212"
 
         onClicked: controls.zoomOutRequested()
     }

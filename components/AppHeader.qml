@@ -5,13 +5,13 @@ import QtQuick.Layouts
 Rectangle {
     id: header
 
-    property color panelColor: "#000000"
-    property color borderColor: "#1d242b"
-    property color accentColor: "#009cff"
-    property color textColor: "#f7f7f7"
-    property color secondaryTextColor: "#78a7d1"
-    property color successColor: "#62e600"
-    property color warningColor: "#ff9400"
+    property color panelColor: Theme.background
+    property color borderColor: Theme.border
+    property color accentColor: Theme.accent
+    property color textColor: Theme.text
+    property color secondaryTextColor: Theme.secondaryText
+    property color successColor: Theme.success
+    property color warningColor: Theme.warning
 
     property int radioChannel: 4
     property string radioChannelName: ""
@@ -20,19 +20,17 @@ Rectangle {
 
     property bool bluetoothConnected: false
     property bool radioConnected: true
-    property bool canConnected: false
     property bool transmitting: false
-    property bool warningActive: false
 
     property string mediaTitle: ""
     property string mediaArtist: ""
     property string clockText: ""
 
-    implicitHeight: 82
+    implicitHeight: Theme.headerHeight
     color: panelColor
 
     function updateClock() {
-        clockText = Qt.formatTime(new Date(), "HH:mm")
+        clockText = Qt.formatTime(new Date(), "h:mm")
     }
 
     function radioText() {
@@ -45,29 +43,46 @@ Rectangle {
         return "CH " + radioChannel
     }
 
-    function cleanTitle() {
+    function validMediaTitle() {
         var value = mediaTitle.trim()
 
-        if (value === ""
-                || value === "No media playing"
-                || value === "Bluetooth Audio") {
-            return bluetoothConnected ? "PHONE CONNECTED" : "NO MEDIA"
-        }
-
-        return value
+        return value !== ""
+            && value !== "No media playing"
+            && value !== "Bluetooth Audio"
+            && value !== "PHONE CONNECTED"
+            && value !== "Phone Connected"
     }
 
-    function cleanArtist() {
+    function validMediaArtist() {
         var value = mediaArtist.trim()
 
-        if (value === ""
-                || value === "Connect phone and start Spotify"
-                || value === "Connected phone"
-                || value === "Unknown Artist") {
-            return ""
-        }
+        return value !== ""
+            && value !== "Unknown Artist"
+            && value !== "Connected phone"
+            && value !== "Connect phone and start Spotify"
+    }
 
-        return value
+    function displayTitle() {
+        if (validMediaTitle())
+            return mediaTitle.trim()
+
+        if (bluetoothConnected)
+            return "BT Connected"
+
+        return "Bluetooth Disconnected"
+    }
+
+    function displaySubtitle() {
+        if (validMediaTitle() && validMediaArtist())
+            return mediaArtist.trim()
+
+        if (validMediaTitle())
+            return ""
+
+        if (bluetoothConnected)
+            return "Waiting for Media"
+
+        return "Open Settings to Pair"
     }
 
     Component.onCompleted: updateClock()
@@ -83,209 +98,202 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+
         height: 1
         color: header.borderColor
     }
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 22
-        anchors.rightMargin: 22
-        spacing: 18
 
-        Row {
-            Layout.preferredWidth: 110
+        anchors.leftMargin: 16
+        anchors.rightMargin: 16
+        anchors.topMargin: 7
+        anchors.bottomMargin: 7
+
+        spacing: 16
+
+        /*
+         * GPS status
+         */
+        Item {
+            Layout.preferredWidth: 58
             Layout.fillHeight: true
-            spacing: 10
+
+            Row {
+                anchors.centerIn: parent
+                spacing: 6
+
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    width: 10
+                    height: 10
+                    radius: 5
+
+                    color: header.gpsSatellites > 0
+                        ? header.successColor
+                        : "#596168"
+                }
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    text: header.gpsSatellites.toString()
+                    color: header.textColor
+
+                    font.pixelSize: Theme.gpsSize
+                    font.bold: true
+                }
+            }
+        }
+
+        /*
+         * Radio channel
+         */
+        Item {
+            Layout.preferredWidth: 118
+            Layout.fillHeight: true
 
             Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "GPS"
-                color: header.textColor
-                font.pixelSize: 25
+                anchors.fill: parent
+
+                text: header.radioText()
+
+                color: !header.radioConnected
+                    ? "#596168"
+                    : header.transmitting
+                      ? header.warningColor
+                      : header.textColor
+
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+
+                elide: Text.ElideRight
+
+                font.pixelSize: Theme.channelSize
                 font.bold: true
+
+                SequentialAnimation on opacity {
+                    running: header.transmitting
+                    loops: Animation.Infinite
+
+                    NumberAnimation {
+                        from: 1.0
+                        to: 0.55
+                        duration: 450
+                    }
+
+                    NumberAnimation {
+                        from: 0.55
+                        to: 1.0
+                        duration: 450
+                    }
+                }
             }
-
-            Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 15
-                height: 15
-                radius: 8
-                color: header.gpsSatellites > 0
-                       ? header.successColor
-                       : "#666666"
-            }
         }
 
-        Text {
-            Layout.preferredWidth: 48
-            Layout.fillHeight: true
-
-            text: "ᛒ"
-            color: header.bluetoothConnected
-                   ? header.accentColor
-                   : "#6c747b"
-
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-
-            font.pixelSize: 38
-            font.bold: true
-        }
-
-        Text {
-            Layout.preferredWidth: 150
-            Layout.fillHeight: true
-
-            text: header.radioText()
-            color: header.textColor
-
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-
-            elide: Text.ElideRight
-
-            font.pixelSize: 29
-            font.bold: true
-        }
-
-        Rectangle {
-            Layout.preferredWidth: 1
-            Layout.preferredHeight: 48
-            color: "#5a5a5a"
-        }
-
+        /*
+         * Media area
+         */
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
             Row {
                 anchors.fill: parent
-                anchors.leftMargin: 18
-                spacing: 16
+                spacing: 10
 
-                Text {
+                Icon {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: "♫"
-                    color: header.textColor
-                    font.pixelSize: 42
-                    font.bold: true
+
+                    symbol: "music_note"
+                    size: 23
+
+                    iconColor: header.validMediaTitle()
+                        ? header.textColor
+                        : header.secondaryTextColor
+
+                    filled: true
                 }
 
                 Column {
                     anchors.verticalCenter: parent.verticalCenter
-                    width: parent.width - 72
-                    spacing: 0
+
+                    width: parent.width - 33
+                    spacing: 1
 
                     Text {
                         width: parent.width
-                        text: header.cleanTitle()
+
+                        text: header.displayTitle()
                         color: header.textColor
+
                         elide: Text.ElideRight
-                        font.pixelSize: 24
+
+                        font.pixelSize: Theme.titleSize
                         font.bold: true
                     }
 
                     Text {
                         width: parent.width
-                        text: header.cleanArtist()
+
+                        text: header.displaySubtitle()
                         visible: text !== ""
+
                         color: header.secondaryTextColor
                         elide: Text.ElideRight
-                        font.pixelSize: 18
-                        font.bold: true
+
+                        font.pixelSize: Theme.subtitleSize
+                        font.bold: false
                     }
                 }
             }
         }
 
-        Row {
-            Layout.preferredWidth: 120
-            Layout.fillHeight: true
-            spacing: 10
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "◉"
-                color: header.radioConnected
-                       ? header.successColor
-                       : "#666666"
-                font.pixelSize: 35
-                font.bold: true
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "TX"
-                color: header.transmitting
-                       ? header.warningColor
-                       : "#7a7f84"
-                font.pixelSize: 21
-                font.bold: true
-            }
-        }
-
+        /*
+         * Bluetooth status beside clock
+         */
         Item {
-            Layout.preferredWidth: 78
+            Layout.preferredWidth: 38
             Layout.fillHeight: true
 
-            Canvas {
+            Icon {
                 anchors.centerIn: parent
-                width: 54
-                height: 46
 
-                onPaint: {
-                    var ctx = getContext("2d")
-                    ctx.reset()
+                symbol: header.bluetoothConnected
+                    ? "bluetooth_connected"
+                    : "bluetooth_disabled"
 
-                    ctx.strokeStyle = header.textColor
-                    ctx.lineWidth = 2.5
+                size: 24
 
-                    ctx.strokeRect(20, 3, 14, 10)
-                    ctx.strokeRect(3, 30, 14, 10)
-                    ctx.strokeRect(37, 30, 14, 10)
+                iconColor: header.bluetoothConnected
+                    ? header.accentColor
+                    : "#596168"
 
-                    ctx.beginPath()
-                    ctx.moveTo(27, 13)
-                    ctx.lineTo(27, 22)
-                    ctx.lineTo(10, 22)
-                    ctx.lineTo(10, 30)
-
-                    ctx.moveTo(27, 22)
-                    ctx.lineTo(44, 22)
-                    ctx.lineTo(44, 30)
-                    ctx.stroke()
-                }
-            }
-
-            Rectangle {
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                anchors.rightMargin: 8
-                anchors.bottomMargin: 13
-
-                width: 14
-                height: 14
-                radius: 7
-
-                color: header.canConnected
-                       ? header.successColor
-                       : "#666666"
+                filled: header.bluetoothConnected
             }
         }
 
-        Text {
-            Layout.preferredWidth: 105
+        /*
+         * Clock
+         */
+        Item {
+            Layout.preferredWidth: 68
             Layout.fillHeight: true
 
-            text: header.clockText
-            color: header.textColor
+            Text {
+                anchors.fill: parent
 
-            horizontalAlignment: Text.AlignRight
-            verticalAlignment: Text.AlignVCenter
+                text: header.clockText
+                color: header.textColor
 
-            font.pixelSize: 27
-            font.bold: true
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
+
+                font.pixelSize: Theme.clockSize
+                font.bold: true
+            }
         }
     }
 }

@@ -1,65 +1,49 @@
 import QtQuick
-import QtQuick.Controls
 
 Rectangle {
-    id: compass
+    id: root
 
-    property int heading: 0
-    property color accentColor: "#2da8ff"
-    property color textColor: "white"
+    property real heading: 0
+    property color textColor: "#FFFFFF"
+    property color borderColor: "#4A535C"
 
-    width: 72
-    height: 72
-    radius: 12
+    width: 52
+    height: 30
+    radius: 5
 
-    color: "#b30b1016"
-    opacity: 0.92
+    color: "#88000000"
 
-    border.width: 0
+    border.width: 1
+    border.color: borderColor
 
-    function normalizedHeading(value) {
-        var normalized = value % 360
+    function cardinalDirection(value) {
+        var normalized = ((value % 360) + 360) % 360
 
-        if (normalized < 0)
-            normalized += 360
-
-        return normalized
-    }
-
-    function headingName(value) {
-        var headingValue = normalizedHeading(value)
-
-        if (headingValue >= 337.5 || headingValue < 22.5)
+        if (normalized >= 337.5 || normalized < 22.5)
             return "N"
-
-        if (headingValue < 67.5)
+        if (normalized < 67.5)
             return "NE"
-
-        if (headingValue < 112.5)
+        if (normalized < 112.5)
             return "E"
-
-        if (headingValue < 157.5)
+        if (normalized < 157.5)
             return "SE"
-
-        if (headingValue < 202.5)
+        if (normalized < 202.5)
             return "S"
-
-        if (headingValue < 247.5)
+        if (normalized < 247.5)
             return "SW"
-
-        if (headingValue < 292.5)
+        if (normalized < 292.5)
             return "W"
 
         return "NW"
     }
 
-    Label {
+    Text {
         anchors.centerIn: parent
 
-        text: compass.headingName(compass.heading)
-        color: compass.textColor
+        text: root.cardinalDirection(root.heading)
+        color: root.textColor
 
-        font.pixelSize: 31
+        font.pixelSize: 17
         font.bold: true
     }
 }

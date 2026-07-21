@@ -1,42 +1,28 @@
 import QtQuick
-import QtQuick.Controls
 
 Rectangle {
     id: root
 
-    property int speed: 0
+    property real speed: 0
+    property color textColor: "#FFFFFF"
+    property color borderColor: "#4A535C"
 
-    property color textColor: "white"
-    property color secondaryTextColor: "#7590a8"
+    width: 52
+    height: 30
+    radius: 5
 
-    // Added so main.qml can set this property
-    property color accentColor: "#2DA8FF"
+    color: "#88000000"
 
-    width: 92
-    height: 82
-    radius: 12
+    border.width: 1
+    border.color: borderColor
 
-    color: "#e6080d12"
-    border.width: 0
-
-    Column {
+    Text {
         anchors.centerIn: parent
-        spacing: -3
 
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: root.speed
-            color: root.textColor
-            font.pixelSize: 44
-            font.bold: true
-        }
+        text: Math.round(root.speed).toString()
+        color: root.textColor
 
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "(GPS)"
-            color: root.secondaryTextColor
-            font.pixelSize: 13
-            font.bold: true
-        }
+        font.pixelSize: 17
+        font.bold: true
     }
 }

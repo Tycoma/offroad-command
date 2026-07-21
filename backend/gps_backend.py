@@ -48,9 +48,7 @@ class GPSBackend(QObject):
             gps_socket.settimeout(1.0)
             gps_socket.connect(("127.0.0.1", 2947))
 
-            watch_command = (
-                '?WATCH={"enable":true,"json":true};\n'
-            )
+            watch_command = '?WATCH={"enable":true,"json":true};\n'
             gps_socket.sendall(watch_command.encode("ascii"))
             gps_socket.setblocking(False)
 
@@ -143,8 +141,12 @@ class GPSBackend(QObject):
                 self._update_speed(0)
 
         elif message_class == "SKY":
-            satellites = int(message.get("uSat", 0) or 0)
-            self._update_satellites(satellites)
+            # Some SKY packets don't include uSat.
+            # Only update when it is actually present.
+            if "uSat" in message:
+                satellites = int(message["uSat"] or 0)
+                print(f"GPS satellites: {satellites}")
+                self._update_satellites(satellites)
 
     def _update_speed(self, value):
         if value != self._speed_mph:
