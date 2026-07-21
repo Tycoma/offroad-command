@@ -11,102 +11,99 @@ Rectangle {
     property color borderColor: "#2a3947"
     property color accentColor: "#2da8ff"
     property color textColor: "#f4f7fa"
+    property color secondaryTextColor: "#8fa1b2"
 
     signal pageSelected(int pageNumber)
 
-    implicitHeight: 70
+    implicitHeight: 78
     color: panelColor
 
-    border.width: 1
-    border.color: borderColor
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+
+        height: 1
+        color: navigation.borderColor
+    }
 
     RowLayout {
         anchors.fill: parent
-        anchors.margins: 8
-        spacing: 8
+        anchors.leftMargin: 8
+        anchors.rightMargin: 8
+        anchors.topMargin: 7
+        anchors.bottomMargin: 7
 
-        NavButton {
-            text: "MAPS"
-            selected: navigation.currentPage === 0
+        spacing: 7
 
-            accentColor: navigation.accentColor
-            panelColor: navigation.panelColor
-            borderColor: navigation.borderColor
-            textColor: navigation.textColor
+        Repeater {
+            model: [
+                { label: "MAPS", page: 0 },
+                { label: "MEDIA", page: 1 },
+                { label: "RADIO", page: 2 },
+                { label: "ENGINE", page: 3 },
+                { label: "CAMERAS", page: 4 },
+                { label: "VEHICLE", page: 5 },
+                { label: "SETTINGS", page: 6 }
+            ]
 
-            onClicked: navigation.pageSelected(0)
-        }
+            delegate: Rectangle {
+                required property var modelData
 
-        NavButton {
-            text: "MEDIA"
-            selected: navigation.currentPage === 1
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
-            accentColor: navigation.accentColor
-            panelColor: navigation.panelColor
-            borderColor: navigation.borderColor
-            textColor: navigation.textColor
+                property bool selected:
+                    navigation.currentPage === modelData.page
 
-            onClicked: navigation.pageSelected(1)
-        }
+                radius: 10
 
-        NavButton {
-            text: "RADIO"
-            selected: navigation.currentPage === 2
+                color: selected
+                       ? "#12304a"
+                       : buttonArea.pressed
+                         ? "#17222d"
+                         : "transparent"
 
-            accentColor: navigation.accentColor
-            panelColor: navigation.panelColor
-            borderColor: navigation.borderColor
-            textColor: navigation.textColor
+                border.width: selected ? 1 : 0
+                border.color: selected
+                              ? navigation.accentColor
+                              : "transparent"
 
-            onClicked: navigation.pageSelected(2)
-        }
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
 
-        NavButton {
-            text: "ENGINE"
-            selected: navigation.currentPage === 3
+                    height: 3
+                    radius: 1.5
 
-            accentColor: navigation.accentColor
-            panelColor: navigation.panelColor
-            borderColor: navigation.borderColor
-            textColor: navigation.textColor
+                    visible: parent.selected
+                    color: navigation.accentColor
+                }
 
-            onClicked: navigation.pageSelected(3)
-        }
+                Text {
+                    anchors.centerIn: parent
 
-        NavButton {
-            text: "CAMERAS"
-            selected: navigation.currentPage === 4
+                    text: modelData.label
 
-            accentColor: navigation.accentColor
-            panelColor: navigation.panelColor
-            borderColor: navigation.borderColor
-            textColor: navigation.textColor
+                    color: parent.selected
+                           ? navigation.accentColor
+                           : navigation.textColor
 
-            onClicked: navigation.pageSelected(4)
-        }
+                    font.pixelSize: modelData.label.length > 6 ? 12 : 14
+                    font.bold: true
+                }
 
-        NavButton {
-            text: "VEHICLE"
-            selected: navigation.currentPage === 5
+                MouseArea {
+                    id: buttonArea
 
-            accentColor: navigation.accentColor
-            panelColor: navigation.panelColor
-            borderColor: navigation.borderColor
-            textColor: navigation.textColor
+                    anchors.fill: parent
 
-            onClicked: navigation.pageSelected(5)
-        }
-
-        NavButton {
-            text: "SETTINGS"
-            selected: navigation.currentPage === 6
-
-            accentColor: navigation.accentColor
-            panelColor: navigation.panelColor
-            borderColor: navigation.borderColor
-            textColor: navigation.textColor
-
-            onClicked: navigation.pageSelected(6)
+                    onClicked: {
+                        navigation.pageSelected(modelData.page)
+                    }
+                }
+            }
         }
     }
 }

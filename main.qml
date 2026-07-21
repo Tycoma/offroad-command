@@ -117,7 +117,7 @@ ApplicationWindow {
 
         AppHeader {
             Layout.fillWidth: true
-            Layout.preferredHeight: 46
+            Layout.preferredHeight: 56
 
             panelColor: "#0c1117"
             borderColor: root.borderColor
@@ -289,7 +289,7 @@ GhostSpeed {
 
         BottomNavigation {
             Layout.fillWidth: true
-            Layout.preferredHeight: 70
+            Layout.preferredHeight: 78
 
             currentPage: root.currentPage
 
