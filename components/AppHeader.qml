@@ -5,14 +5,13 @@ import QtQuick.Layouts
 Rectangle {
     id: header
 
-    property color panelColor: "#0c1117"
-    property color borderColor: "#2a3947"
-    property color accentColor: "#2da8ff"
-    property color textColor: "#f4f7fa"
-    property color secondaryTextColor: "#8fa1b2"
-    property color successColor: "#55d889"
-    property color warningColor: "#ffb347"
-    property color dangerColor: "#ff3b3b"
+    property color panelColor: "#000000"
+    property color borderColor: "#1d242b"
+    property color accentColor: "#009cff"
+    property color textColor: "#f7f7f7"
+    property color secondaryTextColor: "#78a7d1"
+    property color successColor: "#62e600"
+    property color warningColor: "#ff9400"
 
     property int radioChannel: 4
     property string radioChannelName: ""
@@ -20,7 +19,7 @@ Rectangle {
     property int gpsSatellites: 0
 
     property bool bluetoothConnected: false
-    property bool radioConnected: false
+    property bool radioConnected: true
     property bool canConnected: false
     property bool transmitting: false
     property bool warningActive: false
@@ -29,47 +28,46 @@ Rectangle {
     property string mediaArtist: ""
     property string clockText: ""
 
-    implicitHeight: 56
+    implicitHeight: 82
     color: panelColor
 
-    function radioDisplayText() {
-        var channelName = radioChannelName.trim()
-        var frequency = radioFrequency.trim()
+    function updateClock() {
+        clockText = Qt.formatTime(new Date(), "HH:mm")
+    }
 
-        if (channelName !== "")
-            return channelName.toUpperCase()
+    function radioText() {
+        if (radioChannelName.trim() !== "")
+            return radioChannelName.toUpperCase()
 
-        if (frequency !== "")
-            return frequency.replace(/MHz/ig, "").trim()
+        if (radioFrequency.trim() !== "")
+            return radioFrequency.replace(/MHz/ig, "").trim()
 
         return "CH " + radioChannel
     }
 
-    function nowPlayingText() {
-        var title = mediaTitle.trim()
-        var artist = mediaArtist.trim()
+    function cleanTitle() {
+        var value = mediaTitle.trim()
 
-        if (title === ""
-                || title === "Bluetooth Audio"
-                || title === "No media"
-                || title === "No media playing") {
-            return bluetoothConnected
-                    ? "PHONE CONNECTED"
-                    : "NO PHONE"
+        if (value === ""
+                || value === "No media playing"
+                || value === "Bluetooth Audio") {
+            return bluetoothConnected ? "PHONE CONNECTED" : "NO MEDIA"
         }
 
-        if (artist === ""
-                || artist === "Connected phone"
-                || artist === "Unknown Artist"
-                || artist === "Connect phone and start Spotify") {
-            return title
-        }
-
-        return artist + "  -  " + title
+        return value
     }
 
-    function updateClock() {
-        clockText = Qt.formatTime(new Date(), "h:mm AP")
+    function cleanArtist() {
+        var value = mediaArtist.trim()
+
+        if (value === ""
+                || value === "Connect phone and start Spotify"
+                || value === "Connected phone"
+                || value === "Unknown Artist") {
+            return ""
+        }
+
+        return value
     }
 
     Component.onCompleted: updateClock()
@@ -85,222 +83,209 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-
         height: 1
         color: header.borderColor
     }
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 12
-        anchors.rightMargin: 12
-        spacing: 8
+        anchors.leftMargin: 22
+        anchors.rightMargin: 22
+        spacing: 18
 
-        Rectangle {
-            Layout.preferredWidth: 112
-            Layout.preferredHeight: 38
-
-            radius: 9
-            color: "#121b24"
-            border.width: 1
-            border.color: header.gpsSatellites > 0
-                          ? header.successColor
-                          : header.borderColor
-
-            Row {
-                anchors.centerIn: parent
-                spacing: 7
-
-                Rectangle {
-                    anchors.verticalCenter: parent.verticalCenter
-
-                    width: 10
-                    height: 10
-                    radius: 5
-
-                    color: header.gpsSatellites > 0
-                           ? header.successColor
-                           : header.secondaryTextColor
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-
-                    text: "GPS " + header.gpsSatellites
-                    color: header.textColor
-
-                    font.pixelSize: 15
-                    font.bold: true
-                }
-            }
-        }
-
-        Rectangle {
-            Layout.preferredWidth: 52
-            Layout.preferredHeight: 38
-
-            radius: 9
-            color: header.bluetoothConnected
-                   ? "#102536"
-                   : "#121820"
-
-            border.width: 1
-            border.color: header.bluetoothConnected
-                          ? header.accentColor
-                          : header.borderColor
+        Row {
+            Layout.preferredWidth: 110
+            Layout.fillHeight: true
+            spacing: 10
 
             Text {
-                anchors.centerIn: parent
-
-                text: "BT"
-                color: header.bluetoothConnected
-                       ? header.accentColor
-                       : header.secondaryTextColor
-
-                font.pixelSize: 14
+                anchors.verticalCenter: parent.verticalCenter
+                text: "GPS"
+                color: header.textColor
+                font.pixelSize: 25
                 font.bold: true
             }
-        }
 
-        Rectangle {
-            Layout.preferredWidth: 58
-            Layout.preferredHeight: 38
-
-            radius: 9
-            color: header.canConnected
-                   ? "#10271d"
-                   : "#121820"
-
-            border.width: 1
-            border.color: header.canConnected
-                          ? header.successColor
-                          : header.borderColor
-
-            Text {
-                anchors.centerIn: parent
-
-                text: "CAN"
-                color: header.canConnected
+            Rectangle {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 15
+                height: 15
+                radius: 8
+                color: header.gpsSatellites > 0
                        ? header.successColor
-                       : header.secondaryTextColor
-
-                font.pixelSize: 14
-                font.bold: true
+                       : "#666666"
             }
         }
 
+        Text {
+            Layout.preferredWidth: 48
+            Layout.fillHeight: true
+
+            text: "ᛒ"
+            color: header.bluetoothConnected
+                   ? header.accentColor
+                   : "#6c747b"
+
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+
+            font.pixelSize: 38
+            font.bold: true
+        }
+
+        Text {
+            Layout.preferredWidth: 150
+            Layout.fillHeight: true
+
+            text: header.radioText()
+            color: header.textColor
+
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+
+            elide: Text.ElideRight
+
+            font.pixelSize: 29
+            font.bold: true
+        }
+
         Rectangle {
-            Layout.preferredWidth: 134
-            Layout.preferredHeight: 38
-
-            radius: 9
-            color: header.transmitting
-                   ? "#382811"
-                   : "#121b24"
-
-            border.width: 1
-            border.color: header.transmitting
-                          ? header.warningColor
-                          : header.borderColor
-
-            Column {
-                anchors.centerIn: parent
-                spacing: 0
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-
-                    text: header.radioDisplayText()
-                    color: header.transmitting
-                           ? header.warningColor
-                           : header.textColor
-
-                    font.pixelSize: 15
-                    font.bold: true
-                }
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-
-                    visible: header.radioFrequency.trim() !== ""
-                    text: header.radioFrequency
-                    color: header.secondaryTextColor
-
-                    font.pixelSize: 10
-                }
-            }
+            Layout.preferredWidth: 1
+            Layout.preferredHeight: 48
+            color: "#5a5a5a"
         }
 
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            Rectangle {
+            Row {
                 anchors.fill: parent
-                anchors.topMargin: 9
-                anchors.bottomMargin: 9
+                anchors.leftMargin: 18
+                spacing: 16
 
-                radius: 8
-                color: "#0f161e"
-                border.width: 0
-            }
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "♫"
+                    color: header.textColor
+                    font.pixelSize: 42
+                    font.bold: true
+                }
 
-            Text {
-                anchors.fill: parent
-                anchors.leftMargin: 14
-                anchors.rightMargin: 14
+                Column {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - 72
+                    spacing: 0
 
-                text: header.nowPlayingText()
-                color: header.bluetoothConnected
-                       ? header.textColor
-                       : header.secondaryTextColor
+                    Text {
+                        width: parent.width
+                        text: header.cleanTitle()
+                        color: header.textColor
+                        elide: Text.ElideRight
+                        font.pixelSize: 24
+                        font.bold: true
+                    }
 
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-
-                elide: Text.ElideRight
-
-                font.pixelSize: 14
-                font.bold: header.bluetoothConnected
+                    Text {
+                        width: parent.width
+                        text: header.cleanArtist()
+                        visible: text !== ""
+                        color: header.secondaryTextColor
+                        elide: Text.ElideRight
+                        font.pixelSize: 18
+                        font.bold: true
+                    }
+                }
             }
         }
 
-        Rectangle {
-            Layout.preferredWidth: 42
-            Layout.preferredHeight: 38
-
-            visible: header.warningActive
-
-            radius: 9
-            color: "#39200f"
-
-            border.width: 1
-            border.color: header.warningColor
+        Row {
+            Layout.preferredWidth: 120
+            Layout.fillHeight: true
+            spacing: 10
 
             Text {
-                anchors.centerIn: parent
+                anchors.verticalCenter: parent.verticalCenter
+                text: "◉"
+                color: header.radioConnected
+                       ? header.successColor
+                       : "#666666"
+                font.pixelSize: 35
+                font.bold: true
+            }
 
-                text: "!"
-                color: header.warningColor
-
-                font.pixelSize: 23
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "TX"
+                color: header.transmitting
+                       ? header.warningColor
+                       : "#7a7f84"
+                font.pixelSize: 21
                 font.bold: true
             }
         }
 
         Item {
-            Layout.preferredWidth: 104
-            Layout.preferredHeight: 38
+            Layout.preferredWidth: 78
+            Layout.fillHeight: true
 
-            Text {
+            Canvas {
                 anchors.centerIn: parent
+                width: 54
+                height: 46
 
-                text: header.clockText
-                color: header.textColor
+                onPaint: {
+                    var ctx = getContext("2d")
+                    ctx.reset()
 
-                font.pixelSize: 17
-                font.bold: true
+                    ctx.strokeStyle = header.textColor
+                    ctx.lineWidth = 2.5
+
+                    ctx.strokeRect(20, 3, 14, 10)
+                    ctx.strokeRect(3, 30, 14, 10)
+                    ctx.strokeRect(37, 30, 14, 10)
+
+                    ctx.beginPath()
+                    ctx.moveTo(27, 13)
+                    ctx.lineTo(27, 22)
+                    ctx.lineTo(10, 22)
+                    ctx.lineTo(10, 30)
+
+                    ctx.moveTo(27, 22)
+                    ctx.lineTo(44, 22)
+                    ctx.lineTo(44, 30)
+                    ctx.stroke()
+                }
             }
+
+            Rectangle {
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.rightMargin: 8
+                anchors.bottomMargin: 13
+
+                width: 14
+                height: 14
+                radius: 7
+
+                color: header.canConnected
+                       ? header.successColor
+                       : "#666666"
+            }
+        }
+
+        Text {
+            Layout.preferredWidth: 105
+            Layout.fillHeight: true
+
+            text: header.clockText
+            color: header.textColor
+
+            horizontalAlignment: Text.AlignRight
+            verticalAlignment: Text.AlignVCenter
+
+            font.pixelSize: 27
+            font.bold: true
         }
     }
 }

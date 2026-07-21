@@ -15,16 +15,16 @@ ApplicationWindow {
     height: 800
 
     title: "Off-Road Command"
-    color: "#000000"
+    color: "#090d12"
 
     property int currentPage: 0
 
-    readonly property color backgroundColor: "#000000"
-    readonly property color panelColor: "#050708"
-    readonly property color borderColor: "#151a1f"
-    readonly property color accentColor: "#009cff"
-    readonly property color textColor: "#ffffff"
-    readonly property color secondaryTextColor: "#9a9a9a"
+    readonly property color backgroundColor: "#090d12"
+    readonly property color panelColor: "#141b23"
+    readonly property color borderColor: "#2a3947"
+    readonly property color accentColor: "#2da8ff"
+    readonly property color textColor: "#f4f7fa"
+    readonly property color secondaryTextColor: "#8fa1b2"
     readonly property color warningColor: "#ffb347"
     readonly property color dangerColor: "#ff3b3b"
     readonly property color successColor: "#55d889"
@@ -119,7 +119,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.preferredHeight: 56
 
-            panelColor: "#000000"
+            panelColor: "#0c1117"
             borderColor: root.borderColor
             accentColor: root.accentColor
             textColor: root.textColor
@@ -293,7 +293,7 @@ GhostSpeed {
 
             currentPage: root.currentPage
 
-            panelColor: "#000000"
+            panelColor: "#0c1117"
             borderColor: root.borderColor
             accentColor: root.accentColor
             textColor: root.textColor
