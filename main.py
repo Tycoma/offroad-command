@@ -10,12 +10,13 @@ from PySide6.QtWebEngineQuick import QtWebEngineQuick
 from backend.media_backend import MediaBackend
 from backend.gps_backend import GPSBackend
 from backend.navigation_backend import NavigationBackend
+from backend.vehicle_manager import VehicleManager
 
 
 def main() -> int:
     os.environ.setdefault(
-	"QT_IM_MODULE",
-	"qtvirtualkeyboard"
+        "QT_IM_MODULE",
+        "qtvirtualkeyboard"
     )
 
     QtWebEngineQuick.initialize()
@@ -25,10 +26,25 @@ def main() -> int:
 
     engine = QQmlApplicationEngine()
 
+    #
+    # Create backends
+    #
     navigation_backend = NavigationBackend()
     media_backend = MediaBackend()
     gps_backend = GPSBackend()
 
+    #
+    # Create shared vehicle manager
+    #
+    vehicle_manager = VehicleManager(
+        gps_backend,
+        media_backend,
+        navigation_backend,
+    )
+
+    #
+    # Expose backends to QML
+    #
     engine.rootContext().setContextProperty(
         "navigationBackend",
         navigation_backend,
@@ -44,6 +60,14 @@ def main() -> int:
         gps_backend,
     )
 
+    engine.rootContext().setContextProperty(
+        "vehicleManager",
+        vehicle_manager,
+    )
+
+    #
+    # Load QML
+    #
     qml_file = Path(__file__).resolve().parent / "main.qml"
     engine.load(QUrl.fromLocalFile(str(qml_file)))
 

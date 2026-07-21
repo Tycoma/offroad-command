@@ -5,8 +5,12 @@ Rectangle {
     id: root
 
     property int speed: 0
+
     property color textColor: "white"
     property color secondaryTextColor: "#7590a8"
+
+    // Added so main.qml can set this property
+    property color accentColor: "#2DA8FF"
 
     width: 92
     height: 82
