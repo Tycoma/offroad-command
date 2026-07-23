@@ -549,7 +549,23 @@ Item {
 
         onClosed: page.showTools()
     }
+    WaypointEditor {
+        id: waypointEditor
 
+        parent: page
+        z: 700
+
+        onCancelRequested: {
+            console.log("Waypoint editor cancelled")
+        }
+
+        onSaveRequested: function(name, category, notes, latitude, longitude) {
+            console.log("Saving waypoint:")
+            console.log(name)
+            console.log(category)
+            console.log(latitude, longitude)
+        }
+    }
     LayersPopup {
         id: layersPopup
         z: 500
