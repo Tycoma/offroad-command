@@ -61,3 +61,20 @@ Thumbs.db
 *.backup
 *.before-modular
 *-working-backup.qml
+# Backup files
+*.save
+*.before-*
+
+# Python
+__pycache__/
+*.pyc
+
+# Temporary archives
+*.zip
+
+# VS Code
+.vscode/
+
+# Qt
+*.qmlc
+*.jsc
