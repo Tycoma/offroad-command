@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtWebEngine
+import QtWebChannel
 
 import "../components/map"
 
@@ -34,6 +35,92 @@ Item {
         hideToolsTimer.stop()
     }
 
+    function anyPopupOpen() {
+        return (
+            navigationDrawer.opened ||
+            waypointPopup.opened ||
+            waypointInfoPopup.opened ||
+            layersPopup.opened ||
+            gotoPopup.opened
+        )
+    }
+
+    function loadSavedWaypoints() {
+        if (!page.mapLoaded)
+            return
+
+        const json =
+            waypointManager.getWaypointsJson()
+
+        mapView.runJavaScript(
+            "loadWaypoints(" +
+            JSON.stringify(json) +
+            ");"
+        )
+    }
+
+    WebChannel {
+        id: mapWebChannel
+
+        Component.onCompleted: {
+            registerObject(
+                "mapBridge",
+                mapBridge
+            )
+
+            console.log(
+                "Registered mapBridge with WebChannel"
+            )
+        }
+    }
+
+    Connections {
+        target: waypointManager
+
+        function onWaypointsChanged() {
+            page.loadSavedWaypoints()
+        }
+    }
+
+    Connections {
+        target: mapBridge
+
+        function onWaypointSelected(
+            waypointId
+        ) {
+            waypointManager
+                .setSelectedWaypoint(
+                    waypointId
+                )
+
+            Qt.callLater(function() {
+                waypointInfoPopup.open()
+            })
+        }
+
+        function onMapClicked() {
+            if (page.anyPopupOpen())
+                return
+
+            if (page.toolsVisible)
+                page.hideTools()
+            else
+                page.showTools()
+        }
+
+        function onMapPressed(
+            latitude,
+            longitude
+        ) {
+            console.log(
+                "Map pressed:",
+                latitude,
+                longitude
+            )
+        }
+
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "#101820"
@@ -43,59 +130,46 @@ Item {
 
             anchors.fill: parent
 
+            webChannel: mapWebChannel
+
             url: Qt.resolvedUrl(
                 "../navigation/web/map.html"
             )
 
-            settings.localContentCanAccessRemoteUrls: true
-            settings.localContentCanAccessFileUrls: true
-            settings.javascriptEnabled: true
+            settings.localContentCanAccessRemoteUrls:
+                true
 
-            onLoadingChanged: function(loadRequest) {
-                if (
-                    loadRequest.status
-                    === WebEngineView.LoadSucceededStatus
-                ) {
-                    page.mapLoaded = true
+            settings.localContentCanAccessFileUrls:
+                true
+
+            settings.javascriptEnabled:
+                true
+
+            onLoadingChanged:
+                function(loadRequest) {
+                    if (
+                        loadRequest.status ===
+                        WebEngineView
+                            .LoadSucceededStatus
+                    ) {
+                        page.mapLoaded = true
+
+                        Qt.callLater(
+                            page.loadSavedWaypoints
+                        )
+                    }
+
+                    if (
+                        loadRequest.status ===
+                        WebEngineView
+                            .LoadFailedStatus
+                    ) {
+                        console.log(
+                            "Map load failed:",
+                            loadRequest.errorString
+                        )
+                    }
                 }
-
-                if (
-                    loadRequest.status
-                    === WebEngineView.LoadFailedStatus
-                ) {
-                    console.log(
-                        "Map load failed:",
-                        loadRequest.errorString
-                    )
-                }
-            }
-        }
-
-        MouseArea {
-            anchors.fill: parent
-
-            acceptedButtons: Qt.LeftButton
-            propagateComposedEvents: true
-            preventStealing: false
-
-            onClicked: function(mouse) {
-                if (
-                    navigationDrawer.opened
-                    || waypointPopup.opened
-                    || layersPopup.opened
-                    || gotoPopup.opened
-                ) {
-                    mouse.accepted = false
-                    return
-                }
-
-                if (page.toolsVisible)
-                    page.hideTools()
-                else
-                    page.showTools()
-
-                mouse.accepted = false
-            }
         }
 
         Column {
@@ -104,15 +178,19 @@ Item {
             z: 30
 
             anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.verticalCenter:
+                parent.verticalCenter
 
             anchors.leftMargin: 18
-            anchors.verticalCenterOffset: -85
+
+            anchors.verticalCenterOffset:
+                -85
 
             spacing: 6
 
             visible: page.toolsVisible
-            opacity: page.toolsVisible ? 1 : 0
+            opacity:
+                page.toolsVisible ? 1 : 0
 
             Behavior on opacity {
                 NumberAnimation {
@@ -123,20 +201,31 @@ Item {
             MapControls {
                 id: mapControls
 
-                accentColor: page.accentColor
-                textColor: page.textColor
-                borderColor: "#66717a"
+                accentColor:
+                    page.accentColor
+
+                textColor:
+                    page.textColor
+
+                borderColor:
+                    "#66717a"
 
                 toolsVisible: true
 
                 onZoomInRequested: {
                     page.showTools()
-                    mapView.runJavaScript("zoomIn();")
+
+                    mapView.runJavaScript(
+                        "zoomIn();"
+                    )
                 }
 
                 onZoomOutRequested: {
                     page.showTools()
-                    mapView.runJavaScript("zoomOut();")
+
+                    mapView.runJavaScript(
+                        "zoomOut();"
+                    )
                 }
             }
 
@@ -153,7 +242,9 @@ Item {
                     : "#ed000000"
 
                 border.width:
-                    page.followVehicle ? 2 : 1
+                    page.followVehicle
+                    ? 2
+                    : 1
 
                 border.color:
                     page.followVehicle
@@ -198,24 +289,29 @@ Item {
 
                         font.pixelSize: 10
                         font.bold: true
-                        font.letterSpacing: 0.7
+
+                        font.letterSpacing:
+                            0.7
                     }
                 }
 
                 MouseArea {
                     id: followMouse
-
                     anchors.fill: parent
 
                     onClicked: {
                         page.showTools()
+
                         page.followVehicle =
                             !page.followVehicle
 
-                        if (page.followVehicle) {
-                            mapView.runJavaScript(
-                                "recenterVehicle();"
-                            )
+                        if (
+                            page.followVehicle
+                        ) {
+                            mapView
+                                .runJavaScript(
+                                    "recenterVehicle();"
+                                )
                         }
                     }
                 }
@@ -239,15 +335,20 @@ Item {
                 ? 12
                 : -90
 
-            toolsVisible: page.toolsVisible
-            recording: page.recording
+            toolsVisible:
+                page.toolsVisible
 
-            borderColor: page.borderColor
+            recording:
+                page.recording
+
+            borderColor:
+                page.borderColor
 
             Behavior on anchors.bottomMargin {
                 NumberAnimation {
                     duration: 180
-                    easing.type: Easing.OutCubic
+                    easing.type:
+                        Easing.OutCubic
                 }
             }
 
@@ -258,6 +359,7 @@ Item {
 
             onRecordingRequested: {
                 page.showTools()
+
                 page.recording =
                     !page.recording
 
@@ -302,7 +404,9 @@ Item {
                 ? bottomToolbar.height + 28
                 : 18
 
-            width: statusLabel.implicitWidth + 22
+            width:
+                statusLabel.implicitWidth + 22
+
             height: 32
             radius: 6
 
@@ -320,7 +424,8 @@ Item {
             Behavior on anchors.bottomMargin {
                 NumberAnimation {
                     duration: 180
-                    easing.type: Easing.OutCubic
+                    easing.type:
+                        Easing.OutCubic
                 }
             }
 
@@ -342,23 +447,6 @@ Item {
                         : page.mapLoaded
                           ? page.successColor
                           : page.warningColor
-
-                    SequentialAnimation on opacity {
-                        running: page.recording
-                        loops: Animation.Infinite
-
-                        NumberAnimation {
-                            from: 1.0
-                            to: 0.25
-                            duration: 450
-                        }
-
-                        NumberAnimation {
-                            from: 0.25
-                            to: 1.0
-                            duration: 450
-                        }
-                    }
                 }
 
                 Label {
@@ -387,14 +475,8 @@ Item {
         repeat: false
 
         onTriggered: {
-            if (
-                !navigationDrawer.opened
-                && !waypointPopup.opened
-                && !layersPopup.opened
-                && !gotoPopup.opened
-            ) {
+            if (!page.anyPopupOpen())
                 page.toolsVisible = false
-            }
         }
     }
 
@@ -402,11 +484,10 @@ Item {
         id: navigationDrawer
         z: 500
 
-        width:
-            Math.min(
-                390,
-                page.width * 0.42
-            )
+        width: Math.min(
+            390,
+            page.width * 0.42
+        )
 
         height: page.height
 
@@ -433,8 +514,38 @@ Item {
         secondaryTextColor:
             page.secondaryTextColor
 
-        warningColor: page.warningColor
-        accentColor: page.accentColor
+        warningColor:
+            page.warningColor
+
+        accentColor:
+            page.accentColor
+
+        onClosed: page.showTools()
+    }
+
+    WaypointInfoPopup {
+        id: waypointInfoPopup
+
+        parent: page
+        z: 600
+
+        mapViewRef: mapView
+
+        panelColor: page.panelColor
+        borderColor: page.borderColor
+        textColor: page.textColor
+
+        secondaryTextColor:
+            page.secondaryTextColor
+
+        warningColor:
+            page.warningColor
+
+        accentColor:
+            page.accentColor
+
+        dangerColor:
+            page.dangerColor
 
         onClosed: page.showTools()
     }

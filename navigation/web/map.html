@@ -52,12 +52,72 @@
         }
 
         .waypoint-marker {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             background: #ffb347;
             border: 3px solid white;
             border-radius: 50%;
             box-shadow: 0 0 8px black;
+            cursor: pointer;
+        }
+
+        .waypoint-marker-selected {
+            width: 30px;
+            height: 30px;
+            background: #ffb347;
+            border: 4px solid #2da8ff;
+            border-radius: 50%;
+            box-shadow:
+                0 0 8px black,
+                0 0 14px #2da8ff;
+            cursor: pointer;
+        }
+
+        .temporary-waypoint-marker {
+            position: relative;
+            width: 34px;
+            height: 34px;
+            background: #ff5d5d;
+            border: 4px solid white;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow:
+                0 0 8px black,
+                0 0 16px rgba(255, 93, 93, 0.8);
+        }
+
+        .temporary-waypoint-marker::after {
+            content: "";
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            top: 7px;
+            left: 7px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .temporary-waypoint-pulse {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            left: -11px;
+            top: -11px;
+            border: 3px solid rgba(255, 93, 93, 0.75);
+            border-radius: 50%;
+            animation: waypointPulse 1.4s infinite;
+        }
+
+        @keyframes waypointPulse {
+            0% {
+                transform: scale(0.55);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.45);
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -66,9 +126,19 @@
     <div id="map"></div>
 
     <script src="leaflet.js"></script>
+    <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
 
     <script>
-        const startingPosition = [33.432472564, -111.608407937];
+        const startingPosition = [
+            33.432472564,
+            -111.608407937
+        ];
+
+        let mapBridge = null;
+        let selectedWaypointId = "";
+        let temporaryWaypointMarker = null;
+
+        const waypointMarkers = [];
 
         const map = L.map("map", {
             zoomControl: false,
@@ -95,17 +165,40 @@
 
         const vehicleIcon = L.divIcon({
             className: "",
-            html: '<div class="vehicle-marker"></div>',
+            html:
+                '<div class="vehicle-marker"></div>',
             iconSize: [38, 38],
             iconAnchor: [19, 19]
         });
 
-        const waypointIcon = L.divIcon({
+        const temporaryWaypointIcon = L.divIcon({
             className: "",
-            html: '<div class="waypoint-marker"></div>',
-            iconSize: [26, 26],
-            iconAnchor: [13, 13]
+            html:
+                '<div class="temporary-waypoint-marker">' +
+                    '<div class="temporary-waypoint-pulse"></div>' +
+                '</div>',
+            iconSize: [42, 42],
+            iconAnchor: [17, 38]
         });
+
+        function createWaypointIcon(selected) {
+            const markerClass = selected
+                ? "waypoint-marker-selected"
+                : "waypoint-marker";
+
+            const size = selected ? 38 : 30;
+            const anchor = size / 2;
+
+            return L.divIcon({
+                className: "",
+                html:
+                    '<div class="' +
+                    markerClass +
+                    '"></div>',
+                iconSize: [size, size],
+                iconAnchor: [anchor, anchor]
+            });
+        }
 
         const vehicleMarker = L.marker(
             startingPosition,
@@ -126,49 +219,154 @@
             }
         ).addTo(map);
 
-        let latitude = startingPosition[0];
-        let longitude = startingPosition[1];
+        let simulationRunning = false;
 
-        // Simulated movement removed.
-        // Live GPS will update the marker.
+        function initializeWebChannel() {
+            if (
+                typeof qt === "undefined" ||
+                !qt.webChannelTransport
+            ) {
+                console.error(
+                    "Qt WebChannel transport unavailable."
+                );
+                return;
+            }
 
+            new QWebChannel(
+                qt.webChannelTransport,
+                function(channel) {
+                    mapBridge =
+                        channel.objects.mapBridge;
 
-        map.on("contextmenu", function(event) {
-            const marker = L.marker(
-                event.latlng,
-                {
-                    icon: waypointIcon
+                    if (!mapBridge) {
+                        console.error(
+                            "mapBridge was not registered."
+                        );
+                        return;
+                    }
+
+                    console.log(
+                        "Qt WebChannel connected."
+                    );
+
+                    mapBridge.pageLoaded();
                 }
-            ).addTo(map);
+            );
+        }
 
-            marker.bindPopup(
-                "<strong>New Waypoint</strong><br>" +
-                event.latlng.lat.toFixed(5) +
-                ", " +
-                event.latlng.lng.toFixed(5)
+        initializeWebChannel();
+
+        function setTemporaryWaypoint(
+            latitude,
+            longitude
+        ) {
+            const lat = Number(latitude);
+            const lon = Number(longitude);
+
+            if (
+                !Number.isFinite(lat) ||
+                !Number.isFinite(lon)
+            ) {
+                console.error(
+                    "Invalid temporary waypoint coordinates:",
+                    latitude,
+                    longitude
+                );
+
+                return false;
+            }
+
+            if (temporaryWaypointMarker) {
+                temporaryWaypointMarker.setLatLng(
+                    [lat, lon]
+                );
+            } else {
+                temporaryWaypointMarker = L.marker(
+                    [lat, lon],
+                    {
+                        icon: temporaryWaypointIcon,
+                        zIndexOffset: 2000,
+                        keyboard: false,
+                        interactive: false
+                    }
+                ).addTo(map);
+            }
+
+            return true;
+        }
+
+        function removeTemporaryWaypoint() {
+            if (!temporaryWaypointMarker) {
+                return false;
+            }
+
+            map.removeLayer(
+                temporaryWaypointMarker
             );
 
-            marker.openPopup();
-        });
+            temporaryWaypointMarker = null;
 
-        // Desktop testing: double-click creates a waypoint.
-        map.on("dblclick", function(event) {
-            const marker = L.marker(
-                event.latlng,
-                {
-                    icon: waypointIcon
+            return true;
+        }
+
+        function getTemporaryWaypointJson() {
+            if (!temporaryWaypointMarker) {
+                return "";
+            }
+
+            const position =
+                temporaryWaypointMarker.getLatLng();
+
+            return JSON.stringify({
+                latitude: position.lat,
+                longitude: position.lng
+            });
+        }
+
+        map.on(
+            "click",
+            function(event) {
+                const latitude =
+                    event.latlng.lat;
+
+                const longitude =
+                    event.latlng.lng;
+
+                console.log(
+                    "Leaflet map clicked:",
+                    latitude,
+                    longitude
+                );
+
+                setTemporaryWaypoint(
+                    latitude,
+                    longitude
+                );
+
+                if (!mapBridge) {
+                    console.error(
+                        "Map click ignored because mapBridge is not connected."
+                    );
+                    return;
                 }
-            ).addTo(map);
 
-            marker.bindPopup(
-                "<strong>New Waypoint</strong><br>" +
-                event.latlng.lat.toFixed(5) +
-                ", " +
-                event.latlng.lng.toFixed(5)
-            );
+                if (!mapBridge.mapPressedSlot) {
+                    console.error(
+                        "mapPressedSlot is not available on mapBridge."
+                    );
+                    return;
+                }
 
-            marker.openPopup();
-        });
+                console.log(
+                    "Sending map coordinates to Qt."
+                );
+
+                mapBridge.mapPressedSlot(
+                    latitude,
+                    longitude
+                );
+            }
+        );
 
         function zoomIn() {
             map.zoomIn();
@@ -186,40 +384,210 @@
         }
 
         function toggleSimulation() {
-            simulationRunning = !simulationRunning;
+            simulationRunning =
+                !simulationRunning;
+
             return simulationRunning;
         }
-function getVehiclePositionJson() {
-    const position = vehicleMarker.getLatLng();
 
-    return JSON.stringify({
-        latitude: position.lat,
-        longitude: position.lng
-    });
-}
+        function getVehiclePositionJson() {
+            const position =
+                vehicleMarker.getLatLng();
 
-function addWaypointMarker(
-    latitude,
-    longitude,
-    name,
-    category
-) {
-    const marker = L.marker(
-        [latitude, longitude],
-        {
-            icon: waypointIcon
+            return JSON.stringify({
+                latitude: position.lat,
+                longitude: position.lng
+            });
         }
-    ).addTo(map);
 
-    marker.bindPopup(
-        "<strong>" + name + "</strong><br>" +
-        category + "<br>" +
-        latitude.toFixed(5) + ", " +
-        longitude.toFixed(5)
-    );
+        function clearWaypoints() {
+            waypointMarkers.forEach(
+                function(marker) {
+                    map.removeLayer(marker);
+                }
+            );
 
-    marker.openPopup();
-}
+            waypointMarkers.length = 0;
+        }
+
+        function updateWaypointSelection() {
+            waypointMarkers.forEach(
+                function(marker) {
+                    const isSelected =
+                        marker.waypointId ===
+                        selectedWaypointId;
+
+                    marker.setIcon(
+                        createWaypointIcon(
+                            isSelected
+                        )
+                    );
+
+                    marker.setZIndexOffset(
+                        isSelected ? 800 : 100
+                    );
+                }
+            );
+        }
+
+        function selectWaypointMarker(
+            waypointId
+        ) {
+            selectedWaypointId =
+                String(waypointId || "");
+
+            updateWaypointSelection();
+        }
+
+        function addWaypointMarker(
+            id,
+            latitude,
+            longitude,
+            name,
+            category
+        ) {
+            const marker = L.marker(
+                [latitude, longitude],
+                {
+                    icon:
+                        createWaypointIcon(
+                            id ===
+                            selectedWaypointId
+                        ),
+                    zIndexOffset: 100
+                }
+            ).addTo(map);
+
+            marker.waypointId =
+                String(id);
+
+            marker.waypointName =
+                name;
+
+            marker.waypointCategory =
+                category;
+
+            marker.on(
+                "click",
+                function(event) {
+                    L.DomEvent.stopPropagation(
+                        event
+                    );
+
+                    removeTemporaryWaypoint();
+
+                    selectWaypointMarker(
+                        marker.waypointId
+                    );
+
+                    console.log(
+                        "Waypoint clicked:",
+                        marker.waypointId
+                    );
+
+                    if (
+                        mapBridge &&
+                        mapBridge.selectWaypoint
+                    ) {
+                        mapBridge.selectWaypoint(
+                            marker.waypointId
+                        );
+                    } else {
+                        console.error(
+                            "mapBridge is not connected."
+                        );
+                    }
+                }
+            );
+
+            waypointMarkers.push(marker);
+        }
+
+        function loadWaypoints(jsonText) {
+            clearWaypoints();
+
+            let waypoints;
+
+            try {
+                waypoints =
+                    JSON.parse(jsonText);
+            } catch (error) {
+                console.error(
+                    "Could not parse waypoints:",
+                    error
+                );
+                return;
+            }
+
+            if (!Array.isArray(waypoints)) {
+                console.error(
+                    "Waypoint data was not an array."
+                );
+                return;
+            }
+
+            waypoints.forEach(
+                function(waypoint) {
+                    addWaypointMarker(
+                        waypoint.id,
+                        Number(
+                            waypoint.latitude
+                        ),
+                        Number(
+                            waypoint.longitude
+                        ),
+                        waypoint.name ||
+                            "Waypoint",
+                        waypoint.category ||
+                            "WAYPOINT"
+                    );
+                }
+            );
+
+            updateWaypointSelection();
+        }
+
+        function centerOnWaypoint(
+            waypointId
+        ) {
+            const cleanedId =
+                String(waypointId);
+
+            const marker =
+                waypointMarkers.find(
+                    function(item) {
+                        return (
+                            item.waypointId ===
+                            cleanedId
+                        );
+                    }
+                );
+
+            if (!marker) {
+                return false;
+            }
+
+            removeTemporaryWaypoint();
+
+            selectWaypointMarker(
+                cleanedId
+            );
+
+            map.setView(
+                marker.getLatLng(),
+                Math.max(
+                    map.getZoom(),
+                    16
+                )
+            );
+
+            return true;
+        }
+
+        function clearWaypointSelection() {
+            selectedWaypointId = "";
+            updateWaypointSelection();
+        }
     </script>
 </body>
 </html>
