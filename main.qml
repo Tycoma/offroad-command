@@ -4,6 +4,7 @@ import QtQuick.Layouts
 
 import "pages"
 import "components"
+import "components/developer"
 
 ApplicationWindow {
     id: root
@@ -53,24 +54,40 @@ ApplicationWindow {
     function changePage(pageNumber) {
         currentPage = pageNumber
         pageStack.currentIndex = pageNumber
+
+        logBridge.info(
+            "UI",
+            "Changed to page " + pageNumber
+        )
     }
 
     function criticalWarningText() {
-        if (coolantTemp >= maxCoolantTemp)
+        if (coolantTemp >= maxCoolantTemp) {
             return "CRITICAL ENGINE WARNING - COOLANT "
-                   + coolantTemp + " F"
+                + coolantTemp
+                + " F"
+        }
 
-        if (oilPressure <= minOilPressure && engineRpm > 800)
+        if (
+            oilPressure <= minOilPressure
+            && engineRpm > 800
+        ) {
             return "CRITICAL ENGINE WARNING - OIL PRESSURE "
-                   + oilPressure + " PSI"
+                + oilPressure
+                + " PSI"
+        }
 
-        if (batteryVoltage <= minBatteryVoltage)
+        if (batteryVoltage <= minBatteryVoltage) {
             return "CRITICAL ELECTRICAL WARNING - BATTERY "
-                   + batteryVoltage.toFixed(1) + " V"
+                + batteryVoltage.toFixed(1)
+                + " V"
+        }
 
-        if (engineRpm >= maxEngineRpm)
+        if (engineRpm >= maxEngineRpm) {
             return "CRITICAL ENGINE WARNING - OVER REV "
-                   + engineRpm + " RPM"
+                + engineRpm
+                + " RPM"
+        }
 
         return ""
     }
@@ -95,19 +112,64 @@ ApplicationWindow {
         return warning
     }
 
+    Component.onCompleted: {
+        logBridge.info(
+            "UI",
+            "Main application window loaded"
+        )
+    }
+
     Shortcut {
         sequence: "Escape"
-        onActivated: root.close()
+
+        onActivated: {
+            if (developerConsole.consoleVisible) {
+                developerConsole.closeConsole()
+            } else {
+                root.close()
+            }
+        }
     }
 
     Shortcut {
         sequence: "F11"
 
         onActivated: {
-            if (root.visibility === Window.FullScreen)
+            if (root.visibility === Window.FullScreen) {
                 root.visibility = Window.Windowed
-            else
+
+                logBridge.info(
+                    "UI",
+                    "Window changed to windowed mode"
+                )
+            } else {
                 root.visibility = Window.FullScreen
+
+                logBridge.info(
+                    "UI",
+                    "Window changed to fullscreen mode"
+                )
+            }
+        }
+    }
+
+    Shortcut {
+        sequence: "F12"
+
+        onActivated: {
+            developerConsole.toggleConsole()
+
+            if (developerConsole.consoleVisible) {
+                logBridge.info(
+                    "UI",
+                    "Developer console opened"
+                )
+            } else {
+                logBridge.info(
+                    "UI",
+                    "Developer console closed"
+                )
+            }
         }
     }
 
@@ -134,8 +196,8 @@ ApplicationWindow {
             mediaTitle: mediaBackend.title
             mediaArtist: mediaBackend.artist
 
-	    radioConnected: true
-	    transmitting: false
+            radioConnected: true
+            transmitting: false
         }
 
         Item {
@@ -149,13 +211,14 @@ ApplicationWindow {
                 currentIndex: root.currentPage
 
                 MapsPage {
-		    id:mapsPage
+                    id: mapsPage
 
                     panelColor: root.panelColor
                     borderColor: root.borderColor
                     accentColor: root.accentColor
                     textColor: root.textColor
-                    secondaryTextColor: root.secondaryTextColor
+                    secondaryTextColor:
+                        root.secondaryTextColor
                     warningColor: root.warningColor
                     dangerColor: root.dangerColor
                     successColor: root.successColor
@@ -166,7 +229,8 @@ ApplicationWindow {
                     borderColor: root.borderColor
                     accentColor: root.accentColor
                     textColor: root.textColor
-                    secondaryTextColor: root.secondaryTextColor
+                    secondaryTextColor:
+                        root.secondaryTextColor
                     warningColor: root.warningColor
                     dangerColor: root.dangerColor
                     successColor: root.successColor
@@ -177,31 +241,42 @@ ApplicationWindow {
                     borderColor: root.borderColor
                     accentColor: root.accentColor
                     textColor: root.textColor
-                    secondaryTextColor: root.secondaryTextColor
+                    secondaryTextColor:
+                        root.secondaryTextColor
                     warningColor: root.warningColor
                     dangerColor: root.dangerColor
                     successColor: root.successColor
 
                     currentChannel: root.radioChannel
 
-                    onChannelSelected: function(channel) {
-                        root.radioChannel = channel
-                    }
+                    onChannelSelected:
+                        function(channel) {
+                            root.radioChannel = channel
+
+                            logBridge.info(
+                                "RADIO",
+                                "Selected radio channel "
+                                    + channel
+                            )
+                        }
                 }
 
                 PlaceholderPage {
                     pageTitle: "ENGINE"
-                    description: "MEFI-4 engine gauges and diagnostics"
+                    description:
+                        "MEFI-4 engine gauges and diagnostics"
                 }
 
                 PlaceholderPage {
                     pageTitle: "CAMERAS"
-                    description: "Vehicle camera system"
+                    description:
+                        "Vehicle camera system"
                 }
 
                 PlaceholderPage {
                     pageTitle: "VEHICLE"
-                    description: "Lights, compressor and PDM controls"
+                    description:
+                        "Lights, compressor and PDM controls"
                 }
 
                 SettingsPage {
@@ -209,66 +284,121 @@ ApplicationWindow {
                     borderColor: root.borderColor
                     accentColor: root.accentColor
                     textColor: root.textColor
-                    secondaryTextColor: root.secondaryTextColor
+                    secondaryTextColor:
+                        root.secondaryTextColor
                     warningColor: root.warningColor
                     dangerColor: root.dangerColor
                     successColor: root.successColor
 
-                    bluetoothConnected: mediaBackend.connected
-                    gpsSatellites: root.gpsSatellites
+                    bluetoothConnected:
+                        mediaBackend.connected
+
+                    gpsSatellites:
+                        root.gpsSatellites
+
                     canConnected: false
 
-                    coolantWarning: root.maxCoolantTemp
-                    oilPressureWarning: root.minOilPressure
-                    batteryWarning: root.minBatteryVoltage
-                    rpmWarning: root.maxEngineRpm
+                    coolantWarning:
+                        root.maxCoolantTemp
 
-                    onCoolantWarningChangedByUser: function(value) {
-                        root.maxCoolantTemp = value
-                    }
+                    oilPressureWarning:
+                        root.minOilPressure
 
-                    onOilPressureWarningChangedByUser: function(value) {
-                        root.minOilPressure = value
-                    }
+                    batteryWarning:
+                        root.minBatteryVoltage
 
-                    onBatteryWarningChangedByUser: function(value) {
-                        root.minBatteryVoltage = value
-                    }
+                    rpmWarning:
+                        root.maxEngineRpm
 
-                    onRpmWarningChangedByUser: function(value) {
-                        root.maxEngineRpm = value
-                    }
+                    onCoolantWarningChangedByUser:
+                        function(value) {
+                            root.maxCoolantTemp = value
+
+                            logBridge.info(
+                                "UI",
+                                "Coolant warning set to "
+                                    + value
+                                    + " F"
+                            )
+                        }
+
+                    onOilPressureWarningChangedByUser:
+                        function(value) {
+                            root.minOilPressure = value
+
+                            logBridge.info(
+                                "UI",
+                                "Oil pressure warning set to "
+                                    + value
+                                    + " PSI"
+                            )
+                        }
+
+                    onBatteryWarningChangedByUser:
+                        function(value) {
+                            root.minBatteryVoltage = value
+
+                            logBridge.info(
+                                "UI",
+                                "Battery warning set to "
+                                    + value.toFixed(1)
+                                    + " V"
+                            )
+                        }
+
+                    onRpmWarningChangedByUser:
+                        function(value) {
+                            root.maxEngineRpm = value
+
+                            logBridge.info(
+                                "UI",
+                                "RPM warning set to "
+                                    + value
+                            )
+                        }
 
                     onExitRequested: {
+                        logBridge.info(
+                            "SYSTEM",
+                            "Exit requested from settings"
+                        )
+
                         root.close()
                     }
                 }
             }
-GhostSpeed {
-    z:1
 
-    anchors.left: parent.left
-    anchors.bottom: parent.bottom
+            GhostSpeed {
+                z: 1
 
-    anchors.leftMargin: 20
-    anchors.bottomMargin: 16
+                anchors.left: parent.left
+                anchors.bottom: parent.bottom
 
-    visible: root.currentPage === 0
-	&& !mapsPage.toolsVisible
+                anchors.leftMargin: 20
+                anchors.bottomMargin: 16
 
-    speed: root.gpsSpeed
-    textColor: "white"
-}
- 
+                visible:
+                    root.currentPage === 0
+                    && !mapsPage.toolsVisible
+                    && !developerConsole.consoleVisible
+
+                speed: root.gpsSpeed
+                textColor: "white"
+            }
+
             GhostCompass {
+                z: 1
+
                 anchors.top: parent.top
                 anchors.right: parent.right
 
                 anchors.topMargin: 16
                 anchors.rightMargin: 20
 
-                visible: root.currentPage === 0
-		    && !mapsPage.toolsVisible
+                visible:
+                    root.currentPage === 0
+                    && !mapsPage.toolsVisible
+                    && !developerConsole.consoleVisible
 
                 heading: root.gpsHeading
                 textColor: "white"
@@ -277,17 +407,25 @@ GhostSpeed {
             CriticalAlert {
                 anchors.left: parent.left
                 anchors.right: parent.right
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.verticalCenter:
+                    parent.verticalCenter
 
                 z: 1000
 
                 dangerColor: root.dangerColor
-                // Disabled until live MEFI/CAN engine data is connected.
+
+                // Disabled until live MEFI/CAN
+                // engine data is connected.
                 warningText: ""
                 visible: false
 
                 onAcknowledged: {
                     root.warningAcknowledged = true
+
+                    logBridge.warning(
+                        "SYSTEM",
+                        "Critical warning acknowledged"
+                    )
                 }
             }
         }
@@ -303,15 +441,72 @@ GhostSpeed {
             accentColor: root.accentColor
             textColor: root.textColor
 
-            onPageSelected: function(pageNumber) {
-                root.changePage(pageNumber)
+            onPageSelected:
+                function(pageNumber) {
+                    root.changePage(pageNumber)
+                }
+        }
+    }
+
+    Rectangle {
+        id: developerConsoleBackdrop
+
+        anchors.fill: parent
+        z: 19990
+
+        visible: developerConsole.consoleVisible
+
+        color: "#99000000"
+
+        MouseArea {
+            anchors.fill: parent
+
+            onClicked: {
+                developerConsole.closeConsole()
+
+                logBridge.info(
+                    "UI",
+                    "Developer console closed"
+                )
             }
         }
     }
-OnScreenKeyboard {
-    id: onScreenKeyboard
 
-    anchors.left: parent.left
-    anchors.right: parent.right
-}
+    DeveloperConsole {
+        id: developerConsole
+
+        z: 20000
+
+        anchors.horizontalCenter:
+            parent.horizontalCenter
+
+        anchors.verticalCenter:
+            parent.verticalCenter
+
+        width: Math.min(
+            parent.width - 40,
+            1220
+        )
+
+        height: Math.min(
+            parent.height - 40,
+            740
+        )
+
+        onCloseRequested: {
+            logBridge.info(
+                "UI",
+                "Developer console closed"
+            )
+        }
+    }
+
+    OnScreenKeyboard {
+        id: onScreenKeyboard
+
+        z: 1000
+
+        anchors.left: parent.left
+        anchors.right: parent.right
+    }
 }

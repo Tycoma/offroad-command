@@ -44,6 +44,70 @@ Popup {
         })
     }
 
+    function saveWaypoint() {
+        const cleanedName = waypointName.text.trim()
+
+        if (cleanedName === "") {
+            waypointStatus.text =
+                "Enter a waypoint name."
+
+            waypointName.forceActiveFocus()
+            return
+        }
+
+        if (!popup.mapViewRef) {
+            waypointStatus.text =
+                "Map is not available."
+
+            return
+        }
+
+        waypointStatus.text =
+            "Saving waypoint..."
+
+        popup.mapViewRef.runJavaScript(
+            "getVehiclePositionJson();",
+            function(result) {
+                try {
+                    const position =
+                        JSON.parse(result)
+
+                    const savedWaypoint =
+                        waypointManager.createWaypoint(
+                            cleanedName,
+                            waypointCategory.currentText,
+                            waypointNotes.text,
+                            Number(position.latitude),
+                            Number(position.longitude)
+                        )
+
+                    if (savedWaypoint !== "") {
+                        /*
+                         * Do not add a marker manually here.
+                         *
+                         * WaypointManager emits
+                         * waypointsChanged, and MapsPage
+                         * reloads all saved markers.
+                         */
+                        Qt.inputMethod.hide()
+                        popup.close()
+                    } else {
+                        waypointStatus.text =
+                            "Could not save waypoint."
+                    }
+                } catch (error) {
+                    console.log(
+                        "Waypoint save error:",
+                        error
+                    )
+
+                    waypointStatus.text =
+                        "Invalid map position."
+                }
+            }
+        )
+    }
+
     background: Rectangle {
         color: popup.panelColor
 
@@ -54,7 +118,8 @@ Popup {
 
         Rectangle {
             anchors.top: parent.top
-            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.horizontalCenter:
+                parent.horizontalCenter
             anchors.topMargin: 9
 
             width: 70
@@ -70,6 +135,7 @@ Popup {
 
         ColumnLayout {
             anchors.fill: parent
+
             anchors.leftMargin: 26
             anchors.rightMargin: 26
             anchors.topMargin: 24
@@ -110,7 +176,9 @@ Popup {
 
                     text: "SAVE"
 
-                    onClicked: popup.saveWaypoint()
+                    onClicked: {
+                        popup.saveWaypoint()
+                    }
                 }
             }
 
@@ -124,7 +192,8 @@ Popup {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 54
 
-                    placeholderText: "Waypoint name"
+                    placeholderText:
+                        "Waypoint name"
 
                     inputMethodHints:
                         Qt.ImhNoPredictiveText
@@ -161,14 +230,15 @@ Popup {
                 wrapMode: TextArea.Wrap
 
                 inputMethodHints:
-                    Qt.ImhMultiLine |
-                    Qt.ImhNoPredictiveText
+                    Qt.ImhMultiLine
+                    | Qt.ImhNoPredictiveText
 
                 background: Rectangle {
                     radius: 8
                     color: "#1b2530"
 
                     border.width: 1
+
                     border.color:
                         waypointNotes.activeFocus
                         ? popup.accentColor
@@ -190,63 +260,6 @@ Popup {
                 font.pixelSize: 13
             }
         }
-    }
-
-    function saveWaypoint() {
-        if (waypointName.text.trim() === "") {
-            waypointStatus.text = "Enter a waypoint name."
-            waypointName.forceActiveFocus()
-            return
-        }
-
-        if (!popup.mapViewRef) {
-            waypointStatus.text = "Map is not available."
-            return
-        }
-
-        waypointStatus.text = "Saving waypoint..."
-
-        popup.mapViewRef.runJavaScript(
-            "getVehiclePositionJson();",
-            function(result) {
-                try {
-                    var position = JSON.parse(result)
-
-                    var saved =
-                        navigationBackend.saveWaypoint(
-                            waypointName.text,
-                            waypointCategory.currentText,
-                            waypointNotes.text,
-                            position.latitude,
-                            position.longitude
-                        )
-
-                    if (saved) {
-                        popup.mapViewRef.runJavaScript(
-                            "addWaypointMarker(" +
-                            position.latitude + "," +
-                            position.longitude + "," +
-                            JSON.stringify(
-                                waypointName.text
-                            ) + "," +
-                            JSON.stringify(
-                                waypointCategory.currentText
-                            ) +
-                            ");"
-                        )
-
-                        Qt.inputMethod.hide()
-                        popup.close()
-                    } else {
-                        waypointStatus.text =
-                            "Could not save waypoint."
-                    }
-                } catch (error) {
-                    waypointStatus.text =
-                        "Invalid map position."
-                }
-            }
-        )
     }
 
     onOpened: {
