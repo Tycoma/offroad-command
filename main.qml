@@ -180,7 +180,7 @@ ApplicationWindow {
 
         AppHeader {
             Layout.fillWidth: true
-            Layout.preferredHeight: 72
+            Layout.preferredHeight: 52
 
             panelColor: "#000000"
             borderColor: root.borderColor
@@ -435,7 +435,7 @@ ApplicationWindow {
 
         BottomNavigation {
             Layout.fillWidth: true
-            Layout.preferredHeight: 78
+            Layout.preferredHeight: 58
 
             currentPage: root.currentPage
 

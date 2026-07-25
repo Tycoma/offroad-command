@@ -15,7 +15,7 @@ Rectangle {
 
     signal pageSelected(int pageNumber)
 
-    implicitHeight: 96
+    implicitHeight: 60
     color: "#000000"
 
     Rectangle {
@@ -115,8 +115,8 @@ Rectangle {
             anchors.leftMargin: 24
             anchors.rightMargin: 24
 
-            height: 4
-            radius: 2
+            height: 3
+            radius: 1.5
 
             visible: navItem.selected
             color: navigation.accentColor
@@ -124,13 +124,13 @@ Rectangle {
 
         Column {
             anchors.centerIn: parent
-            anchors.verticalCenterOffset: -3
+            anchors.verticalCenterOffset: -2
 
-            spacing: 2
+            spacing: 1
 
             Item {
-                width: 58
-                height: 51
+                width: 42
+                height: 37
 
                 anchors.horizontalCenter: parent.horizontalCenter
 
@@ -141,6 +141,7 @@ Rectangle {
                     onPaint: {
                         var ctx = getContext("2d")
                         ctx.reset()
+                        ctx.scale(0.72, 0.72)
 
                         var iconColor = navItem.selected
                                 ? navigation.accentColor
@@ -280,7 +281,7 @@ Rectangle {
                        ? navigation.accentColor
                        : navigation.secondaryTextColor
 
-                font.pixelSize: 16
+                font.pixelSize: 12
                 font.bold: true
             }
         }

@@ -30,21 +30,21 @@ QtObject {
     // Header
     //
 
-    readonly property int headerHeight: 72
+    readonly property int headerHeight: 52
 
     //
     // Fonts
     //
 
-    readonly property int clockSize: 20
+    readonly property int clockSize: 15
 
-    readonly property int titleSize: 18
+    readonly property int titleSize: 15
 
-    readonly property int subtitleSize: 14
+    readonly property int subtitleSize: 11
 
-    readonly property int channelSize: 18
+    readonly property int channelSize: 15
 
-    readonly property int gpsSize: 17
+    readonly property int gpsSize: 14
 
     readonly property int iconSize: 22
 

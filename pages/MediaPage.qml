@@ -155,22 +155,24 @@ Item {
                             }
 
                             Label {
+                                Layout.fillWidth: true
+                                Layout.leftMargin: 8
+                                Layout.rightMargin: 8
+
                                 text: mediaBackend.connected
-                                      ? "PHONE LINK — CONNECTED"
-                                      : "PHONE LINK — WAITING"
+                                      ? "CONNECTED"
+                                      : "WAITING"
 
                                 color: page.textColor
-                                font.pixelSize: 13
-                                font.bold: true
-                                font.letterSpacing: 0.5
-                            }
+                                elide: Text.ElideRight
 
-                            Item {
-                                Layout.fillWidth: true
+                                font.pixelSize: 12
+                                font.bold: true
                             }
 
                             Button {
-                                Layout.preferredWidth: 96
+                                Layout.preferredWidth: 44
+                                Layout.minimumWidth: 44
                                 Layout.preferredHeight: 36
 
                                 onClicked: mediaBackend.refresh()
@@ -182,21 +184,12 @@ Item {
                                     border.color: page.borderColor
                                 }
 
-                                contentItem: RowLayout {
-                                    spacing: 4
-
-                                    Icon {
-                                        symbol: "refresh"
-                                        size: 16
-                                        iconColor: page.textColor
-                                    }
-
-                                    Label {
-                                        text: "REFRESH"
-                                        color: page.textColor
-                                        font.pixelSize: 11
-                                        font.bold: true
-                                    }
+                                contentItem: Icon {
+                                    symbol: "refresh"
+                                    size: 18
+                                    iconColor: page.textColor
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
                                 }
                             }
                         }

@@ -106,30 +106,30 @@ Rectangle {
     RowLayout {
         anchors.fill: parent
 
-        anchors.leftMargin: 16
-        anchors.rightMargin: 16
-        anchors.topMargin: 7
-        anchors.bottomMargin: 7
+        anchors.leftMargin: 14
+        anchors.rightMargin: 14
+        anchors.topMargin: 4
+        anchors.bottomMargin: 4
 
-        spacing: 16
+        spacing: 12
 
         /*
          * GPS status
          */
         Item {
-            Layout.preferredWidth: 58
+            Layout.preferredWidth: 48
             Layout.fillHeight: true
 
             Row {
                 anchors.centerIn: parent
-                spacing: 6
+                spacing: 5
 
                 Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
 
-                    width: 10
-                    height: 10
-                    radius: 5
+                    width: 8
+                    height: 8
+                    radius: 4
 
                     color: header.gpsSatellites > 0
                         ? header.successColor
@@ -152,7 +152,7 @@ Rectangle {
          * Radio channel
          */
         Item {
-            Layout.preferredWidth: 118
+            Layout.preferredWidth: 96
             Layout.fillHeight: true
 
             Text {
@@ -202,13 +202,13 @@ Rectangle {
 
             Row {
                 anchors.fill: parent
-                spacing: 10
+                spacing: 8
 
                 Icon {
                     anchors.verticalCenter: parent.verticalCenter
 
                     symbol: "music_note"
-                    size: 23
+                    size: 19
 
                     iconColor: header.validMediaTitle()
                         ? header.textColor
@@ -220,8 +220,8 @@ Rectangle {
                 Column {
                     anchors.verticalCenter: parent.verticalCenter
 
-                    width: parent.width - 33
-                    spacing: 1
+                    width: parent.width - 27
+                    spacing: 0
 
                     Text {
                         width: parent.width
@@ -255,7 +255,7 @@ Rectangle {
          * Bluetooth status beside clock
          */
         Item {
-            Layout.preferredWidth: 38
+            Layout.preferredWidth: 32
             Layout.fillHeight: true
 
             Icon {
@@ -265,7 +265,7 @@ Rectangle {
                     ? "bluetooth_connected"
                     : "bluetooth_disabled"
 
-                size: 24
+                size: 20
 
                 iconColor: header.bluetoothConnected
                     ? header.accentColor
@@ -279,7 +279,7 @@ Rectangle {
          * Clock
          */
         Item {
-            Layout.preferredWidth: 68
+            Layout.preferredWidth: 56
             Layout.fillHeight: true
 
             Text {
