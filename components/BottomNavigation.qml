@@ -85,18 +85,6 @@ Rectangle {
 
             onClicked: navigation.pageSelected(6)
         }
-
-        NavItem {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
-            label: "MORE"
-            iconType: "more"
-            selected: navigation.currentPage === 3
-                      || navigation.currentPage === 4
-
-            onClicked: navigation.pageSelected(3)
-        }
     }
 
     component NavItem: Item {
@@ -137,6 +125,7 @@ Rectangle {
                 Canvas {
                     id: iconCanvas
                     anchors.fill: parent
+                    visible: navItem.iconType !== "music"
 
                     onPaint: {
                         var ctx = getContext("2d")
@@ -217,15 +206,6 @@ Rectangle {
                             ctx.stroke()
                         }
 
-                        else if (navItem.iconType === "music") {
-                            ctx.fillRect(35, 7, 4, 30)
-                            ctx.fillRect(35, 7, 16, 5)
-
-                            ctx.beginPath()
-                            ctx.arc(28, 38, 8, 0, Math.PI * 2)
-                            ctx.fill()
-                        }
-
                         else if (navItem.iconType === "settings") {
                             ctx.beginPath()
                             ctx.arc(29, 26, 16, 0, Math.PI * 2)
@@ -269,6 +249,20 @@ Rectangle {
                             iconCanvas.requestPaint()
                         }
                     }
+                }
+
+                Icon {
+                    anchors.centerIn: parent
+
+                    visible: navItem.iconType === "music"
+
+                    symbol: "music_note"
+                    size: 30
+                    filled: navItem.selected
+
+                    iconColor: navItem.selected
+                               ? navigation.accentColor
+                               : "#a5a5a5"
                 }
             }
 
