@@ -41,7 +41,8 @@ Item {
             waypointPopup.opened ||
             waypointInfoPopup.opened ||
             layersPopup.opened ||
-            gotoPopup.opened
+            gotoPopup.opened ||
+            waypointEditor.editorVisible
         )
     }
 
@@ -112,8 +113,10 @@ Item {
             latitude,
             longitude
         ) {
-            console.log(
-                "Map pressed:",
+            if (page.anyPopupOpen())
+                return
+
+            waypointEditor.openEditor(
                 latitude,
                 longitude
             )
@@ -556,14 +559,26 @@ Item {
         z: 700
 
         onCancelRequested: {
-            console.log("Waypoint editor cancelled")
+            mapView.runJavaScript(
+                "removeTemporaryWaypoint();"
+            )
         }
 
         onSaveRequested: function(name, category, notes, latitude, longitude) {
-            console.log("Saving waypoint:")
-            console.log(name)
-            console.log(category)
-            console.log(latitude, longitude)
+            const waypointJson =
+                waypointManager.createWaypoint(
+                    name,
+                    category,
+                    notes,
+                    latitude,
+                    longitude
+                )
+
+            if (waypointJson) {
+                mapView.runJavaScript(
+                    "removeTemporaryWaypoint();"
+                )
+            }
         }
     }
     LayersPopup {
