@@ -25,6 +25,11 @@ Item {
     property bool followVehicle: true
     property bool toolsVisible: false
 
+    signal waypointEditRequested(
+        real latitude,
+        real longitude
+    )
+
     function showTools() {
         toolsVisible = true
         hideToolsTimer.restart()
@@ -41,8 +46,7 @@ Item {
             waypointPopup.opened ||
             waypointInfoPopup.opened ||
             layersPopup.opened ||
-            gotoPopup.opened ||
-            waypointEditor.editorVisible
+            gotoPopup.opened
         )
     }
 
@@ -57,6 +61,15 @@ Item {
             "loadWaypoints(" +
             JSON.stringify(json) +
             ");"
+        )
+    }
+
+    function removeTemporaryMarker() {
+        if (!page.mapLoaded)
+            return
+
+        mapView.runJavaScript(
+            "removeTemporaryWaypoint();"
         )
     }
 
@@ -116,7 +129,7 @@ Item {
             if (page.anyPopupOpen())
                 return
 
-            waypointEditor.openEditor(
+            page.waypointEditRequested(
                 latitude,
                 longitude
             )
@@ -551,35 +564,6 @@ Item {
             page.dangerColor
 
         onClosed: page.showTools()
-    }
-    WaypointEditor {
-        id: waypointEditor
-
-        parent: page
-        z: 700
-
-        onCancelRequested: {
-            mapView.runJavaScript(
-                "removeTemporaryWaypoint();"
-            )
-        }
-
-        onSaveRequested: function(name, category, notes, latitude, longitude) {
-            const waypointJson =
-                waypointManager.createWaypoint(
-                    name,
-                    category,
-                    notes,
-                    latitude,
-                    longitude
-                )
-
-            if (waypointJson) {
-                mapView.runJavaScript(
-                    "removeTemporaryWaypoint();"
-                )
-            }
-        }
     }
     LayersPopup {
         id: layersPopup

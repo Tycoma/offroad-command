@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import "pages"
 import "components"
 import "components/developer"
+import "components/map"
 
 ApplicationWindow {
     id: root
@@ -380,6 +381,7 @@ ApplicationWindow {
                 visible:
                     root.currentPage === 0
                     && !mapsPage.toolsVisible
+                    && !waypointEditor.editorVisible
                     && !developerConsole.consoleVisible
 
                 speed: root.gpsSpeed
@@ -398,6 +400,7 @@ ApplicationWindow {
                 visible:
                     root.currentPage === 0
                     && !mapsPage.toolsVisible
+                    && !waypointEditor.editorVisible
                     && !developerConsole.consoleVisible
 
                 heading: root.gpsHeading
@@ -508,5 +511,44 @@ ApplicationWindow {
 
         anchors.left: parent.left
         anchors.right: parent.right
+    }
+
+    WaypointEditor {
+        id: waypointEditor
+
+        z: 15000
+    }
+
+    Connections {
+        target: mapsPage
+
+        function onWaypointEditRequested(latitude, longitude) {
+            if (waypointEditor.editorVisible)
+                return
+
+            waypointEditor.openEditor(latitude, longitude)
+        }
+    }
+
+    Connections {
+        target: waypointEditor
+
+        function onCancelRequested() {
+            mapsPage.removeTemporaryMarker()
+        }
+
+        function onSaveRequested(name, category, notes, latitude, longitude) {
+            const waypointJson = waypointManager.createWaypoint(
+                name,
+                category,
+                notes,
+                latitude,
+                longitude
+            )
+
+            if (waypointJson) {
+                mapsPage.removeTemporaryMarker()
+            }
+        }
     }
 }
