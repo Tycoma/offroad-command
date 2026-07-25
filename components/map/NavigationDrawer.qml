@@ -14,6 +14,8 @@ Drawer {
     modal: true
     interactive: true
 
+    signal tripsRequested()
+
     background: Rectangle {
         color: drawer.panelColor
 
@@ -65,7 +67,9 @@ Drawer {
             Layout.fillWidth: true
             Layout.preferredHeight: 58
 
-            text: "RECORDED TRACKS"
+            text: "TRIPS"
+
+            onClicked: drawer.tripsRequested()
         }
 
         Button {

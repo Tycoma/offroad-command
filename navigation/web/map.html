@@ -210,7 +210,8 @@
 
         let recordingTrackLine = null;
         let followVehicleEnabled = true;
-        const savedTrackLines = [];
+        let savedTracksById = {};
+        const visibleTrackIds = new Set();
 
         function initializeWebChannel() {
             if (
@@ -507,19 +508,7 @@
             recordingTrackLine = null;
         }
 
-        function clearSavedTracks() {
-            savedTrackLines.forEach(
-                function(line) {
-                    map.removeLayer(line);
-                }
-            );
-
-            savedTrackLines.length = 0;
-        }
-
         function loadTracks(jsonText) {
-            clearSavedTracks();
-
             let tracks;
 
             try {
@@ -532,18 +521,58 @@
                 return;
             }
 
-            tracks.forEach(function(track) {
-                const line = L.polyline(
-                    track.points,
-                    {
-                        color: "#8a5cff",
-                        weight: 5,
-                        opacity: 0.75
-                    }
-                ).addTo(map);
+            Object.keys(savedTracksById).forEach(
+                function(id) {
+                    const entry = savedTracksById[id];
 
-                savedTrackLines.push(line);
+                    if (entry.line) {
+                        map.removeLayer(entry.line);
+                    }
+                }
+            );
+
+            savedTracksById = {};
+
+            tracks.forEach(function(track) {
+                savedTracksById[track.id] = {
+                    points: track.points,
+                    line: null
+                };
+
+                if (visibleTrackIds.has(track.id)) {
+                    setTrackVisible(track.id, true);
+                }
             });
+        }
+
+        function setTrackVisible(trackId, visible) {
+            const entry = savedTracksById[trackId];
+
+            if (!entry) {
+                return;
+            }
+
+            if (visible) {
+                visibleTrackIds.add(trackId);
+
+                if (!entry.line) {
+                    entry.line = L.polyline(
+                        entry.points,
+                        {
+                            color: "#8a5cff",
+                            weight: 5,
+                            opacity: 0.75
+                        }
+                    ).addTo(map);
+                }
+            } else {
+                visibleTrackIds.delete(trackId);
+
+                if (entry.line) {
+                    map.removeLayer(entry.line);
+                    entry.line = null;
+                }
+            }
         }
 
         function getVehiclePositionJson() {

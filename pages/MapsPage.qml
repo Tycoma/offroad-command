@@ -20,10 +20,10 @@ Item {
     property color dangerColor: "#ff5d5d"
     property color successColor: "#55d889"
 
-    property bool recording: false
     property bool mapLoaded: false
     property bool followVehicle: true
     property bool toolsVisible: false
+    property var tripVisibility: ({})
 
     signal waypointEditRequested(
         real latitude,
@@ -46,7 +46,8 @@ Item {
             waypointPopup.opened ||
             waypointInfoPopup.opened ||
             layersPopup.opened ||
-            gotoPopup.opened
+            gotoPopup.opened ||
+            tripsPopup.opened
         )
     }
 
@@ -102,12 +103,11 @@ Item {
             ");"
         )
 
-        if (page.recording) {
-            trackManager.addPoint(
-                gpsBackend.latitude,
-                gpsBackend.longitude
-            )
-        }
+        trackManager.updatePosition(
+            gpsBackend.latitude,
+            gpsBackend.longitude,
+            gpsBackend.speedMph
+        )
     }
 
     WebChannel {
@@ -138,6 +138,18 @@ Item {
 
         function onTracksChanged() {
             page.loadSavedTracks()
+        }
+
+        function onRecordingChanged() {
+            if (trackManager.recording) {
+                mapView.runJavaScript(
+                    "startTrackRecording();"
+                )
+            } else {
+                mapView.runJavaScript(
+                    "stopTrackRecording();"
+                )
+            }
         }
     }
 
@@ -427,9 +439,6 @@ Item {
             toolsVisible:
                 page.toolsVisible
 
-            recording:
-                page.recording
-
             borderColor:
                 page.borderColor
 
@@ -446,26 +455,6 @@ Item {
                 waypointPopup.open()
             }
 
-            onRecordingRequested: {
-                page.showTools()
-
-                if (!page.recording) {
-                    trackManager.startRecording()
-
-                    mapView.runJavaScript(
-                        "startTrackRecording();"
-                    )
-                } else {
-                    trackManager.stopRecording()
-
-                    mapView.runJavaScript(
-                        "stopTrackRecording();"
-                    )
-                }
-
-                page.recording = !page.recording
-            }
-
             onRoutesRequested: {
                 page.showTools()
                 navigationDrawer.open()
@@ -473,7 +462,7 @@ Item {
 
             onTracksRequested: {
                 page.showTools()
-                navigationDrawer.open()
+                tripsPopup.open()
             }
 
             onLayersRequested: {
@@ -513,7 +502,7 @@ Item {
             border.width: 1
 
             border.color:
-                page.recording
+                trackManager.recording
                 ? page.dangerColor
                 : page.mapLoaded
                   ? page.successColor
@@ -540,7 +529,7 @@ Item {
                     radius: 4
 
                     color:
-                        page.recording
+                        trackManager.recording
                         ? page.dangerColor
                         : page.mapLoaded
                           ? page.successColor
@@ -551,7 +540,7 @@ Item {
                     id: statusLabel
 
                     text:
-                        page.recording
+                        trackManager.recording
                         ? "REC"
                         : page.mapLoaded
                           ? "READY"
@@ -597,6 +586,11 @@ Item {
             page.secondaryTextColor
 
         onClosed: page.showTools()
+
+        onTripsRequested: {
+            navigationDrawer.close()
+            tripsPopup.open()
+        }
     }
 
     WaypointPopup {
@@ -672,6 +666,23 @@ Item {
         borderColor: page.borderColor
         textColor: page.textColor
         warningColor: page.warningColor
+
+        onClosed: page.showTools()
+    }
+
+    TripsPopup {
+        id: tripsPopup
+        z: 500
+
+        anchors.centerIn: parent
+
+        mapViewRef: mapView
+        trackVisibility: page.tripVisibility
+
+        panelColor: page.panelColor
+        borderColor: page.borderColor
+        textColor: page.textColor
+        secondaryTextColor: page.secondaryTextColor
 
         onClosed: page.showTools()
     }

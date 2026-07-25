@@ -1,13 +1,20 @@
 import json
 import math
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Property, Signal, Slot
+from PySide6.QtCore import QObject, Property, QTimer, Signal, Slot
 
 
 class TrackManager(QObject):
+    """
+    Automatically records the vehicle's GPS path as a "trip" whenever
+    it is moving, and stops/saves the trip after it has been
+    stationary for a while. There is no manual start/stop control.
+    """
+
     tracksChanged = Signal()
     recordingChanged = Signal()
     pointCountChanged = Signal()
@@ -16,6 +23,11 @@ class TrackManager(QObject):
 
     MIN_POINT_DISTANCE_METERS = 8.0
 
+    START_SPEED_MPH = 3.0
+    STOP_TIMEOUT_SECONDS = 300
+
+    STATIONARY_CHECK_INTERVAL_MS = 15000
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -23,10 +35,15 @@ class TrackManager(QObject):
 
         self._data_directory = project_root / "data"
         self._data_file = self._data_directory / "tracks.json"
+        self._checkpoint_file = (
+            self._data_directory / "current_trip.json"
+        )
 
         self._tracks = []
         self._recording = False
         self._current_points = []
+        self._started_at = None
+        self._last_movement_monotonic = None
 
         self._data_directory.mkdir(
             parents=True,
@@ -34,6 +51,16 @@ class TrackManager(QObject):
         )
 
         self._load_tracks()
+        self._recover_checkpoint()
+
+        self._stationary_timer = QTimer(self)
+        self._stationary_timer.setInterval(
+            self.STATIONARY_CHECK_INTERVAL_MS
+        )
+        self._stationary_timer.timeout.connect(
+            self._check_stationary_timeout
+        )
+        self._stationary_timer.start()
 
     def _load_tracks(self):
         if not self._data_file.exists():
@@ -91,6 +118,70 @@ class TrackManager(QObject):
 
             return False
 
+    def _save_checkpoint(self):
+        try:
+            with self._checkpoint_file.open(
+                "w",
+                encoding="utf-8",
+            ) as file:
+                json.dump(
+                    {
+                        "started": self._started_at.isoformat()
+                        if self._started_at
+                        else None,
+                        "points": self._current_points,
+                    },
+                    file,
+                )
+
+        except OSError:
+            pass
+
+    def _clear_checkpoint(self):
+        try:
+            self._checkpoint_file.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    def _recover_checkpoint(self):
+        if not self._checkpoint_file.exists():
+            return
+
+        try:
+            with self._checkpoint_file.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+                data = json.load(file)
+
+            points = data.get("points") or []
+            started = data.get("started")
+
+            if len(points) >= 2:
+                started_at = (
+                    datetime.fromisoformat(started)
+                    if started
+                    else datetime.now(timezone.utc)
+                )
+
+                self._finish_trip(
+                    points,
+                    started_at,
+                    recovered=True,
+                )
+
+                print(
+                    "Recovered an in-progress trip from an "
+                    "unclean shutdown",
+                    flush=True,
+                )
+
+        except (OSError, json.JSONDecodeError, ValueError):
+            pass
+
+        finally:
+            self._clear_checkpoint()
+
     @staticmethod
     def _distance_meters(lat1, lon1, lat2, lon2):
         radius = 6371000.0
@@ -133,24 +224,30 @@ class TrackManager(QObject):
     def getTracksJson(self):
         return json.dumps(self._tracks)
 
-    @Slot()
-    def startRecording(self):
-        if self._recording:
-            return
+    @Slot(float, float, float)
+    def updatePosition(self, latitude, longitude, speed_mph):
+        now = time.monotonic()
 
+        if speed_mph >= self.START_SPEED_MPH:
+            self._last_movement_monotonic = now
+
+            if not self._recording:
+                self._start_trip()
+
+        if self._recording:
+            self._add_point(latitude, longitude)
+
+    def _start_trip(self):
         self._current_points = []
+        self._started_at = datetime.now(timezone.utc)
         self._recording = True
 
         self.recordingChanged.emit()
         self.pointCountChanged.emit()
 
-        print("Track recording started", flush=True)
+        print("Trip started", flush=True)
 
-    @Slot(float, float)
-    def addPoint(self, latitude, longitude):
-        if not self._recording:
-            return
-
+    def _add_point(self, latitude, longitude):
         if self._current_points:
             last_lat, last_lon = self._current_points[-1]
 
@@ -170,58 +267,94 @@ class TrackManager(QObject):
         )
 
         self.pointCountChanged.emit()
+        self._save_checkpoint()
 
-    @Slot(result=str)
-    def stopRecording(self):
-        if not self._recording:
-            return ""
+    def _check_stationary_timeout(self):
+        if (
+            not self._recording
+            or self._last_movement_monotonic is None
+        ):
+            return
 
+        idle_seconds = (
+            time.monotonic() - self._last_movement_monotonic
+        )
+
+        if idle_seconds >= self.STOP_TIMEOUT_SECONDS:
+            self._end_trip()
+
+    def _end_trip(self):
         self._recording = False
         self.recordingChanged.emit()
 
-        if len(self._current_points) < 2:
-            self._current_points = []
-            self.pointCountChanged.emit()
+        points = self._current_points
+        started_at = self._started_at
 
+        self._current_points = []
+        self._started_at = None
+        self.pointCountChanged.emit()
+
+        self._clear_checkpoint()
+
+        if len(points) < 2:
             print(
-                "Track recording stopped: not enough points, discarded",
+                "Trip ended: not enough movement, discarded",
                 flush=True,
             )
+            return
 
-            return ""
+        self._finish_trip(points, started_at)
 
-        track = {
+    def _finish_trip(self, points, started_at, recovered=False):
+        distance_meters = 0.0
+
+        for index in range(1, len(points)):
+            previous_lat, previous_lon = points[index - 1]
+            lat, lon = points[index]
+
+            distance_meters += self._distance_meters(
+                previous_lat,
+                previous_lon,
+                lat,
+                lon,
+            )
+
+        ended_at = datetime.now(timezone.utc)
+
+        duration_seconds = max(
+            0.0,
+            (ended_at - started_at).total_seconds(),
+        )
+
+        name = "Trip " + started_at.astimezone().strftime(
+            "%Y-%m-%d %H:%M"
+        )
+
+        trip = {
             "id": str(uuid.uuid4()),
-            "name": "Track "
-            + datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "points": self._current_points,
-            "created": datetime.now(
-                timezone.utc
-            ).isoformat(),
+            "name": name,
+            "points": points,
+            "distanceMeters": distance_meters,
+            "durationSeconds": duration_seconds,
+            "started": started_at.isoformat(),
+            "ended": ended_at.isoformat(),
+            "recovered": recovered,
         }
 
-        self._tracks.append(track)
+        self._tracks.append(trip)
 
         if not self._save_tracks():
             self._tracks.pop()
-            self._current_points = []
-            self.pointCountChanged.emit()
+            return
 
-            return ""
-
-        self._current_points = []
-        self.pointCountChanged.emit()
         self.tracksChanged.emit()
 
         print(
-            "Track saved:",
-            track["name"],
-            len(track["points"]),
-            "points",
+            "Trip saved:",
+            trip["name"],
+            f"{distance_meters / 1609.34:.1f} mi",
             flush=True,
         )
-
-        return json.dumps(track)
 
     @Slot(str, result=bool)
     def deleteTrack(self, track_id):
@@ -242,6 +375,6 @@ class TrackManager(QObject):
 
         self.tracksChanged.emit()
 
-        print("Track deleted:", track_id, flush=True)
+        print("Trip deleted:", track_id, flush=True)
 
         return True

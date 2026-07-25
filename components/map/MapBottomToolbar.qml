@@ -6,13 +6,11 @@ Rectangle {
     id: toolbar
 
     property bool toolsVisible: false
-    property bool recording: false
 
     property color panelColor: "#ed0a0f15"
     property color borderColor: "#2a3947"
 
     signal waypointRequested()
-    signal recordingRequested()
     signal routesRequested()
     signal tracksRequested()
     signal layersRequested()
@@ -53,15 +51,6 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            text: toolbar.recording ? "STOP" : "RECORD"
-
-            onClicked: toolbar.recordingRequested()
-        }
-
-        Button {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
             text: "ROUTES"
 
             onClicked: toolbar.routesRequested()
@@ -71,7 +60,7 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            text: "TRACKS"
+            text: "TRIPS"
 
             onClicked: toolbar.tracksRequested()
         }
