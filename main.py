@@ -13,6 +13,7 @@ from backend.log_bridge import LogBridge
 from backend.map_bridge import MapBridge
 from backend.media_backend import MediaBackend
 from backend.navigation_backend import NavigationBackend
+from backend.track_manager import TrackManager
 from backend.vehicle_manager import VehicleManager
 from backend.waypoint_manager import WaypointManager
 
@@ -73,6 +74,7 @@ def main() -> int:
     media_backend = MediaBackend()
     gps_backend = GPSBackend()
     waypoint_manager = WaypointManager()
+    track_manager = TrackManager()
     map_bridge = MapBridge()
 
     vehicle_manager = VehicleManager(
@@ -116,6 +118,11 @@ def main() -> int:
     context.setContextProperty(
         "waypointManager",
         waypoint_manager,
+    )
+
+    context.setContextProperty(
+        "trackManager",
+        track_manager,
     )
 
     context.setContextProperty(

@@ -73,6 +73,43 @@ Item {
         )
     }
 
+    function loadSavedTracks() {
+        if (!page.mapLoaded)
+            return
+
+        const json =
+            trackManager.getTracksJson()
+
+        mapView.runJavaScript(
+            "loadTracks(" +
+            JSON.stringify(json) +
+            ");"
+        )
+    }
+
+    function pushVehiclePosition() {
+        if (!page.mapLoaded)
+            return
+
+        if (gpsBackend.fixMode < 2)
+            return
+
+        mapView.runJavaScript(
+            "updateVehiclePosition(" +
+            gpsBackend.latitude +
+            ", " +
+            gpsBackend.longitude +
+            ");"
+        )
+
+        if (page.recording) {
+            trackManager.addPoint(
+                gpsBackend.latitude,
+                gpsBackend.longitude
+            )
+        }
+    }
+
     WebChannel {
         id: mapWebChannel
 
@@ -93,6 +130,26 @@ Item {
 
         function onWaypointsChanged() {
             page.loadSavedWaypoints()
+        }
+    }
+
+    Connections {
+        target: trackManager
+
+        function onTracksChanged() {
+            page.loadSavedTracks()
+        }
+    }
+
+    Connections {
+        target: gpsBackend
+
+        function onLatitudeChanged() {
+            page.pushVehiclePosition()
+        }
+
+        function onLongitudeChanged() {
+            page.pushVehiclePosition()
         }
     }
 
@@ -170,8 +227,18 @@ Item {
                     ) {
                         page.mapLoaded = true
 
+                        mapView.runJavaScript(
+                            "setFollowVehicle(" +
+                            page.followVehicle +
+                            ");"
+                        )
+
                         Qt.callLater(
                             page.loadSavedWaypoints
+                        )
+
+                        Qt.callLater(
+                            page.loadSavedTracks
                         )
                     }
 
@@ -321,6 +388,12 @@ Item {
                         page.followVehicle =
                             !page.followVehicle
 
+                        mapView.runJavaScript(
+                            "setFollowVehicle(" +
+                            page.followVehicle +
+                            ");"
+                        )
+
                         if (
                             page.followVehicle
                         ) {
@@ -376,12 +449,21 @@ Item {
             onRecordingRequested: {
                 page.showTools()
 
-                page.recording =
-                    !page.recording
+                if (!page.recording) {
+                    trackManager.startRecording()
 
-                mapView.runJavaScript(
-                    "toggleSimulation();"
-                )
+                    mapView.runJavaScript(
+                        "startTrackRecording();"
+                    )
+                } else {
+                    trackManager.stopRecording()
+
+                    mapView.runJavaScript(
+                        "stopTrackRecording();"
+                    )
+                }
+
+                page.recording = !page.recording
             }
 
             onRoutesRequested: {

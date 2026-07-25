@@ -208,18 +208,9 @@
             }
         ).addTo(map);
 
-        const simulatedTrack = [];
-
-        const trackLine = L.polyline(
-            simulatedTrack,
-            {
-                color: "#2da8ff",
-                weight: 6,
-                opacity: 0.85
-            }
-        ).addTo(map);
-
-        let simulationRunning = false;
+        let recordingTrackLine = null;
+        let followVehicleEnabled = true;
+        const savedTrackLines = [];
 
         function initializeWebChannel() {
             if (
@@ -323,48 +314,133 @@
             });
         }
 
+        const LONG_PRESS_DURATION_MS = 550;
+        const LONG_PRESS_CANCEL_PX = 12;
+
+        let longPressTimer = null;
+        let longPressStartLatLng = null;
+        let longPressStartPoint = null;
+        let longPressTriggered = false;
+
+        function clearLongPressTimer() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+        }
+
+        function pressStartedOnMarker(event) {
+            const target =
+                event.originalEvent &&
+                event.originalEvent.target;
+
+            return !!(
+                target &&
+                target.closest &&
+                target.closest(
+                    ".leaflet-marker-icon, .leaflet-popup"
+                )
+            );
+        }
+
+        map.on(
+            "mousedown",
+            function(event) {
+                if (pressStartedOnMarker(event)) {
+                    return;
+                }
+
+                longPressTriggered = false;
+                longPressStartLatLng = event.latlng;
+                longPressStartPoint = event.containerPoint;
+
+                clearLongPressTimer();
+
+                longPressTimer = setTimeout(
+                    function() {
+                        longPressTimer = null;
+                        longPressTriggered = true;
+
+                        const latitude =
+                            longPressStartLatLng.lat;
+
+                        const longitude =
+                            longPressStartLatLng.lng;
+
+                        console.log(
+                            "Leaflet map long-pressed:",
+                            latitude,
+                            longitude
+                        );
+
+                        setTemporaryWaypoint(
+                            latitude,
+                            longitude
+                        );
+
+                        if (!mapBridge || !mapBridge.mapPressedSlot) {
+                            console.error(
+                                "mapPressedSlot is not available on mapBridge."
+                            );
+                            return;
+                        }
+
+                        mapBridge.mapPressedSlot(
+                            latitude,
+                            longitude
+                        );
+                    },
+                    LONG_PRESS_DURATION_MS
+                );
+            }
+        );
+
+        map.on(
+            "mousemove",
+            function(event) {
+                if (!longPressTimer || !longPressStartPoint) {
+                    return;
+                }
+
+                const dx =
+                    event.containerPoint.x -
+                    longPressStartPoint.x;
+
+                const dy =
+                    event.containerPoint.y -
+                    longPressStartPoint.y;
+
+                if (Math.sqrt(dx * dx + dy * dy) > LONG_PRESS_CANCEL_PX) {
+                    clearLongPressTimer();
+                }
+            }
+        );
+
+        map.on("mouseup", clearLongPressTimer);
+        map.on("dragstart", clearLongPressTimer);
+
         map.on(
             "click",
             function(event) {
-                const latitude =
-                    event.latlng.lat;
-
-                const longitude =
-                    event.latlng.lng;
+                if (longPressTriggered) {
+                    longPressTriggered = false;
+                    return;
+                }
 
                 console.log(
                     "Leaflet map clicked:",
-                    latitude,
-                    longitude
+                    event.latlng.lat,
+                    event.latlng.lng
                 );
 
-                setTemporaryWaypoint(
-                    latitude,
-                    longitude
-                );
-
-                if (!mapBridge) {
+                if (!mapBridge || !mapBridge.notifyMapClicked) {
                     console.error(
-                        "Map click ignored because mapBridge is not connected."
+                        "notifyMapClicked is not available on mapBridge."
                     );
                     return;
                 }
 
-                if (!mapBridge.mapPressedSlot) {
-                    console.error(
-                        "mapPressedSlot is not available on mapBridge."
-                    );
-                    return;
-                }
-
-                console.log(
-                    "Sending map coordinates to Qt."
-                );
-
-                mapBridge.mapPressedSlot(
-                    latitude,
-                    longitude
-                );
+                mapBridge.notifyMapClicked();
             }
         );
 
@@ -383,11 +459,91 @@
             );
         }
 
-        function toggleSimulation() {
-            simulationRunning =
-                !simulationRunning;
+        function updateVehiclePosition(
+            latitude,
+            longitude
+        ) {
+            const point = [
+                Number(latitude),
+                Number(longitude)
+            ];
 
-            return simulationRunning;
+            vehicleMarker.setLatLng(point);
+
+            if (recordingTrackLine) {
+                recordingTrackLine.addLatLng(point);
+            }
+
+            if (followVehicleEnabled) {
+                map.panTo(point);
+            }
+        }
+
+        function setFollowVehicle(enabled) {
+            followVehicleEnabled = !!enabled;
+        }
+
+        function startTrackRecording() {
+            if (recordingTrackLine) {
+                map.removeLayer(recordingTrackLine);
+            }
+
+            recordingTrackLine = L.polyline(
+                [vehicleMarker.getLatLng()],
+                {
+                    color: "#ff5d5d",
+                    weight: 6,
+                    opacity: 0.9
+                }
+            ).addTo(map);
+        }
+
+        function stopTrackRecording() {
+            if (!recordingTrackLine) {
+                return;
+            }
+
+            map.removeLayer(recordingTrackLine);
+            recordingTrackLine = null;
+        }
+
+        function clearSavedTracks() {
+            savedTrackLines.forEach(
+                function(line) {
+                    map.removeLayer(line);
+                }
+            );
+
+            savedTrackLines.length = 0;
+        }
+
+        function loadTracks(jsonText) {
+            clearSavedTracks();
+
+            let tracks;
+
+            try {
+                tracks = JSON.parse(jsonText);
+            } catch (error) {
+                console.error(
+                    "Could not parse tracks:",
+                    error
+                );
+                return;
+            }
+
+            tracks.forEach(function(track) {
+                const line = L.polyline(
+                    track.points,
+                    {
+                        color: "#8a5cff",
+                        weight: 5,
+                        opacity: 0.75
+                    }
+                ).addTo(map);
+
+                savedTrackLines.push(line);
+            });
         }
 
         function getVehiclePositionJson() {
