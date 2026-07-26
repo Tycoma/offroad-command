@@ -19,8 +19,8 @@ Popup {
     signal addWaypointRequested()
     signal waypointOpenRequested()
 
-    width: Math.min(520, parent ? parent.width * 0.9 : 520)
-    height: Math.min(560, parent ? parent.height * 0.85 : 560)
+    width: Math.min(560, parent ? parent.width * 0.94 : 560)
+    height: Math.min(640, parent ? parent.height * 0.92 : 640)
 
     modal: true
     focus: true
@@ -144,17 +144,18 @@ Popup {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 20
-        spacing: 10
+        anchors.margins: 16
+        spacing: 8
 
         RowLayout {
             Layout.fillWidth: true
+            spacing: 8
 
             Label {
                 text: "WAYPOINTS"
                 color: popup.textColor
 
-                font.pixelSize: 22
+                font.pixelSize: 20
                 font.bold: true
             }
 
@@ -163,8 +164,8 @@ Popup {
             }
 
             Button {
-                Layout.preferredWidth: 100
-                Layout.preferredHeight: 44
+                Layout.preferredWidth: 80
+                Layout.preferredHeight: 38
 
                 text: "+ ADD"
 
@@ -173,31 +174,41 @@ Popup {
                     popup.addWaypointRequested()
                 }
             }
-        }
 
-        TextField {
-            id: searchField
+            Button {
+                Layout.preferredWidth: 44
+                Layout.preferredHeight: 38
 
-            Layout.fillWidth: true
-            Layout.preferredHeight: 48
+                text: "✕"
 
-            placeholderText: "Search waypoints"
-
-            inputMethodHints:
-                Qt.ImhNoPredictiveText
-
-            onTextChanged: popup.refresh()
+                onClicked: popup.close()
+            }
         }
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: 8
+            spacing: 6
+
+            TextField {
+                id: searchField
+
+                Layout.fillWidth: true
+                Layout.preferredHeight: 44
+
+                placeholderText: "Search waypoints"
+
+                inputMethodHints:
+                    Qt.ImhNoPredictiveText
+
+                onTextChanged: popup.refresh()
+            }
 
             Button {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 40
+                Layout.preferredWidth: 68
+                Layout.preferredHeight: 44
 
-                text: "SORT: NAME"
+                text: "NAME"
+                font.pixelSize: 12
 
                 highlighted:
                     popup.sortMode === "name"
@@ -209,10 +220,11 @@ Popup {
             }
 
             Button {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 40
+                Layout.preferredWidth: 68
+                Layout.preferredHeight: 44
 
-                text: "SORT: DISTANCE"
+                text: "DIST"
+                font.pixelSize: 12
 
                 highlighted:
                     popup.sortMode === "distance"
@@ -240,15 +252,15 @@ Popup {
 
             visible: waypointsModel.count > 0
             clip: true
-            spacing: 8
+            spacing: 5
 
             model: waypointsModel
 
             delegate: Rectangle {
                 width: ListView.view ? ListView.view.width : 0
-                height: 68
+                height: 52
 
-                radius: 10
+                radius: 8
                 color: rowMouse.pressed ? "#232d38" : "#1b222b"
 
                 border.width: 1
@@ -256,12 +268,13 @@ Popup {
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.margins: 10
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 12
                     spacing: 10
 
                     ColumnLayout {
                         Layout.fillWidth: true
-                        spacing: 2
+                        spacing: 0
 
                         Label {
                             Layout.fillWidth: true
@@ -270,7 +283,7 @@ Popup {
                             color: popup.textColor
                             elide: Text.ElideRight
 
-                            font.pixelSize: 15
+                            font.pixelSize: 14
                             font.bold: true
                         }
 
@@ -278,9 +291,9 @@ Popup {
                             text: category
                             color: popup.warningColor
 
-                            font.pixelSize: 11
+                            font.pixelSize: 10
                             font.bold: true
-                            font.letterSpacing: 0.8
+                            font.letterSpacing: 0.6
                         }
                     }
 
@@ -291,7 +304,7 @@ Popup {
                             : "--"
 
                         color: popup.secondaryTextColor
-                        font.pixelSize: 14
+                        font.pixelSize: 13
                     }
                 }
 
@@ -309,14 +322,6 @@ Popup {
                     }
                 }
             }
-        }
-
-        Button {
-            Layout.fillWidth: true
-
-            text: "CLOSE"
-
-            onClicked: popup.close()
         }
     }
 
