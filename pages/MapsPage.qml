@@ -43,6 +43,7 @@ Item {
     function anyPopupOpen() {
         return (
             navigationDrawer.opened ||
+            waypointsListPopup.opened ||
             waypointPopup.opened ||
             waypointInfoPopup.opened ||
             layersPopup.opened ||
@@ -452,7 +453,7 @@ Item {
 
             onWaypointRequested: {
                 page.hideTools()
-                waypointPopup.open()
+                waypointsListPopup.open()
             }
 
             onRoutesRequested: {
@@ -590,6 +591,36 @@ Item {
         onTripsRequested: {
             navigationDrawer.close()
             tripsPopup.open()
+        }
+    }
+
+    WaypointsListPopup {
+        id: waypointsListPopup
+        z: 500
+
+        mapViewRef: mapView
+
+        panelColor: page.panelColor
+        borderColor: page.borderColor
+        textColor: page.textColor
+
+        secondaryTextColor:
+            page.secondaryTextColor
+
+        warningColor:
+            page.warningColor
+
+        accentColor:
+            page.accentColor
+
+        onClosed: page.showTools()
+
+        onAddWaypointRequested: {
+            waypointPopup.open()
+        }
+
+        onWaypointOpenRequested: {
+            waypointInfoPopup.open()
         }
     }
 
