@@ -151,13 +151,16 @@
 
         map.setView(startingPosition, 11);
 
+        // Served locally by MBTilesServer (navigation/map_server.py)
+        // from maps/active.mbtiles -- no internet connection required.
         const tiles = L.tileLayer(
-            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            "http://127.0.0.1:8765/tiles/{z}/{x}/{y}.png",
             {
                 minZoom: 2,
                 maxZoom: 19,
+                maxNativeZoom: 16,
                 attribution:
-                    "&copy; OpenStreetMap contributors"
+                    "Offline map data"
             }
         );
 

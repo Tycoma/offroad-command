@@ -11,9 +11,7 @@ Rectangle {
     property color borderColor: "#2a3947"
 
     signal waypointRequested()
-    signal routesRequested()
     signal tracksRequested()
-    signal layersRequested()
     signal gotoRequested()
 
     height: 72
@@ -51,27 +49,9 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            text: "ROUTES"
-
-            onClicked: toolbar.routesRequested()
-        }
-
-        Button {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
             text: "TRIPS"
 
             onClicked: toolbar.tracksRequested()
-        }
-
-        Button {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
-            text: "LAYERS"
-
-            onClicked: toolbar.layersRequested()
         }
 
         Button {

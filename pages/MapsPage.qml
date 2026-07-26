@@ -42,11 +42,9 @@ Item {
 
     function anyPopupOpen() {
         return (
-            navigationDrawer.opened ||
             waypointsListPopup.opened ||
             waypointPopup.opened ||
             waypointInfoPopup.opened ||
-            layersPopup.opened ||
             gotoPopup.opened ||
             tripsPopup.opened
         )
@@ -456,19 +454,9 @@ Item {
                 waypointsListPopup.open()
             }
 
-            onRoutesRequested: {
-                page.showTools()
-                navigationDrawer.open()
-            }
-
             onTracksRequested: {
                 page.showTools()
                 tripsPopup.open()
-            }
-
-            onLayersRequested: {
-                page.showTools()
-                layersPopup.open()
             }
 
             onGotoRequested: {
@@ -568,32 +556,6 @@ Item {
         }
     }
 
-    NavigationDrawer {
-        id: navigationDrawer
-        z: 500
-
-        width: Math.min(
-            390,
-            page.width * 0.42
-        )
-
-        height: page.height
-
-        panelColor: page.panelColor
-        borderColor: page.borderColor
-        textColor: page.textColor
-
-        secondaryTextColor:
-            page.secondaryTextColor
-
-        onClosed: page.showTools()
-
-        onTripsRequested: {
-            navigationDrawer.close()
-            tripsPopup.open()
-        }
-    }
-
     WaypointsListPopup {
         id: waypointsListPopup
         z: 500
@@ -669,18 +631,6 @@ Item {
 
         dangerColor:
             page.dangerColor
-
-        onClosed: page.showTools()
-    }
-    LayersPopup {
-        id: layersPopup
-        z: 500
-
-        anchors.centerIn: parent
-
-        panelColor: page.panelColor
-        borderColor: page.borderColor
-        textColor: page.textColor
 
         onClosed: page.showTools()
     }

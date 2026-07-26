@@ -16,6 +16,7 @@ from backend.navigation_backend import NavigationBackend
 from backend.track_manager import TrackManager
 from backend.vehicle_manager import VehicleManager
 from backend.waypoint_manager import WaypointManager
+from navigation.map_server import MBTilesServer
 
 
 def main() -> int:
@@ -59,6 +60,27 @@ def main() -> int:
             ),
             flush=True,
         )
+
+    maps_directory = project_root / "maps"
+    maps_directory.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    map_tile_server = MBTilesServer(
+        mbtiles_path=maps_directory / "active.mbtiles",
+        web_directory=project_root / "navigation" / "web",
+    )
+    map_tile_server.start()
+
+    app.aboutToQuit.connect(map_tile_server.stop)
+
+    print(
+        "Offline map tile server started on "
+        f"http://{map_tile_server.host}:{map_tile_server.port} "
+        f"(serving {maps_directory / 'active.mbtiles'})",
+        flush=True,
+    )
 
     engine = QQmlApplicationEngine()
 
